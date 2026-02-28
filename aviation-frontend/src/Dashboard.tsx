@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NavigationHeader } from './components/NavigationHeader';
 import { LiveMap } from './components/LiveMap';
@@ -15,7 +15,9 @@ import { useFlightData } from './hooks/useFlightData';
 import { useMetar } from './hooks/useMetar';
 import { useAlerts } from './hooks/useAlerts';
 import { useTurnaround } from './hooks/useTurnaround';
-import type { SidebarView } from './components/Sidebar';
+import { useReplay } from './hooks/useReplay';
+import { useAppDispatch, useAppSelector } from './store';
+import { setActiveView, setTurnaroundFlight } from './store/slices/uiSlice';
 import type { Flight } from './types/flight';
 
 const viewTransition = {
@@ -26,11 +28,30 @@ const viewTransition = {
 };
 
 export function Dashboard() {
+  const dispatch = useAppDispatch();
+
+  // ── Redux-backed state (read from store) ────────────────────
+  const activeView = useAppSelector((s) => s.ui.activeView);
+  const turnaroundFlight = useAppSelector((s) => s.ui.turnaroundFlight);
+
+  // ── Side-effect hooks (now dispatch into Redux internally) ──
   const { flights, connectionStatus } = useFlightData();
   const { metar, isLoading: metarLoading } = useMetar('KJFK');
   const { alerts, alertCount, latestAlert, dismissLatest } = useAlerts();
-  const [activeView, setActiveView] = useState<SidebarView>('map');
-  const [turnaroundFlight, setTurnaroundFlight] = useState<Flight | null>(null);
+
+  // ── Temporal Replay Controller ──────────────────────────────
+  const {
+    mode: replayMode,
+    offsetSeconds: replayOffsetSeconds,
+    replayTimestamp,
+    isFetching: replayIsFetching,
+    replayFlights,
+    keyframes: replayKeyframes,
+    snapshotFlightCount: replaySnapshotFlightCount,
+    snapshotDeltaSeconds: replaySnapshotDeltaSeconds,
+    setMode: setReplayMode,
+    setOffset: setReplayOffset,
+  } = useReplay();
 
   const {
     state: turnaroundState,
@@ -44,15 +65,23 @@ export function Dashboard() {
     cycleTaskStatus,
   } = useTurnaround();
 
-  const handleSelectTurnaround = (flight: Flight) => {
-    setTurnaroundFlight(flight);
-    startTurnaround(flight.flightId);
-  };
+  const handleSelectTurnaround = useCallback(
+    (flight: Flight) => {
+      dispatch(setTurnaroundFlight(flight));
+      startTurnaround(flight.flightId);
+    },
+    [dispatch, startTurnaround],
+  );
 
-  const handleCloseTurnaround = () => {
+  const handleCloseTurnaround = useCallback(() => {
     closeTurnaround();
-    setTurnaroundFlight(null);
-  };
+    dispatch(setTurnaroundFlight(null));
+  }, [dispatch, closeTurnaround]);
+
+  const handleViewChange = useCallback(
+    (view: typeof activeView) => dispatch(setActiveView(view)),
+    [dispatch],
+  );
 
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 text-white overflow-hidden">
@@ -65,7 +94,7 @@ export function Dashboard() {
       {/* Main Content — Sidebar + Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left Navigation Sidebar */}
-        <Sidebar activeView={activeView} onViewChange={setActiveView} />
+        <Sidebar activeView={activeView} onViewChange={handleViewChange} />
 
         {/* Center Content — switches between Map and Table */}
         <div className="flex-1 flex overflow-hidden relative">
@@ -78,7 +107,19 @@ export function Dashboard() {
               >
                 {/* Map */}
                 <div className="flex-1 p-4 bg-slate-900/10">
-                  <LiveMap flights={flights} />
+                  <LiveMap
+                    flights={flights}
+                    replayMode={replayMode}
+                    replayFlights={replayFlights}
+                    replayOffsetSeconds={replayOffsetSeconds}
+                    replayTimestamp={replayTimestamp}
+                    replayIsFetching={replayIsFetching}
+                    replayKeyframes={replayKeyframes}
+                    replaySnapshotFlightCount={replaySnapshotFlightCount}
+                    replaySnapshotDeltaSeconds={replaySnapshotDeltaSeconds}
+                    onReplayModeChange={setReplayMode}
+                    onReplayOffsetChange={setReplayOffset}
+                  />
                 </div>
 
                 {/* Right Sidebar — Flight Intelligence */}

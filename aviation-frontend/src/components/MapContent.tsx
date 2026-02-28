@@ -1,26 +1,81 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-rotatedmarker';
 import type { Flight } from '../types/flight';
 
 // ── Plane SVG Icon ──────────────────────────────────────────────
-function createPlaneIcon(status: string) {
-  const color = status === 'DELAYED' ? '#ef4444' : status === 'LANDING' ? '#a855f7' : '#3b82f6';
+function createPlaneIcon(status: string, isHistorical = false) {
+  let color: string;
+  if (isHistorical) {
+    // Desaturated blue / greyscale palette for historical markers
+    color = status === 'DELAYED' ? '#9ca3af' : status === 'LANDING' ? '#7c8db5' : '#6b85b3';
+  } else {
+    color = status === 'DELAYED' ? '#ef4444' : status === 'LANDING' ? '#a855f7' : '#3b82f6';
+  }
+
+  const opacity = isHistorical ? '0.7' : '1';
+
   return L.divIcon({
-    html: `<svg viewBox="0 0 24 24" width="28" height="28" fill="${color}" stroke="#0f172a" stroke-width="0.5" xmlns="http://www.w3.org/2000/svg"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`,
+    html: `<svg viewBox="0 0 24 24" width="28" height="28" fill="${color}" fill-opacity="${opacity}" stroke="#0f172a" stroke-width="0.5" xmlns="http://www.w3.org/2000/svg"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 11.5 2 1.5 1.5 0 0 0 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>`,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
     popupAnchor: [0, -14],
-    className: '',
+    className: isHistorical ? 'replay-marker' : '',
   });
 }
 
-// ── Rotated Marker Component ────────────────────────────────────
-function RotatedPlaneMarker({ flight }: { flight: Flight }) {
-  const markerRef = useRef<L.Marker>(null);
+// ── Smoothly-animated Rotated Marker ────────────────────────────
+/**
+ * Uses internal state to animate Leaflet marker position via
+ * `setLatLng` for a smooth glide effect between position updates.
+ */
+const ANIMATE_DURATION_MS = 800;
 
+function RotatedPlaneMarker({ flight, isHistorical = false }: { flight: Flight; isHistorical?: boolean }) {
+  const markerRef = useRef<L.Marker>(null);
+  const prevPos = useRef<[number, number]>([flight.latitude, flight.longitude]);
+  const animFrameRef = useRef<number | null>(null);
+
+  // Smooth position interpolation
+  useEffect(() => {
+    const marker = markerRef.current;
+    if (!marker) return;
+
+    const startPos = prevPos.current;
+    const endPos: [number, number] = [flight.latitude, flight.longitude];
+    const startTime = performance.now();
+
+    const m = marker; // capture for closure
+    function animate(now: number) {
+      const elapsed = now - startTime;
+      const t = Math.min(elapsed / ANIMATE_DURATION_MS, 1);
+      // Ease-out cubic
+      const ease = 1 - Math.pow(1 - t, 3);
+
+      const lat = startPos[0] + (endPos[0] - startPos[0]) * ease;
+      const lng = startPos[1] + (endPos[1] - startPos[1]) * ease;
+
+      m.setLatLng([lat, lng]);
+
+      if (t < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        prevPos.current = endPos;
+      }
+    }
+
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      prevPos.current = endPos;
+    };
+  }, [flight.latitude, flight.longitude]);
+
+  // Heading rotation
   useEffect(() => {
     const marker = markerRef.current;
     if (marker) {
@@ -29,11 +84,19 @@ function RotatedPlaneMarker({ flight }: { flight: Flight }) {
     }
   }, [flight.heading]);
 
+  // Update icon when historical mode changes
+  useEffect(() => {
+    const marker = markerRef.current;
+    if (marker) {
+      marker.setIcon(createPlaneIcon(flight.status, isHistorical));
+    }
+  }, [flight.status, isHistorical]);
+
   return (
     <Marker
       ref={markerRef}
       position={[flight.latitude, flight.longitude]}
-      icon={createPlaneIcon(flight.status)}
+      icon={createPlaneIcon(flight.status, isHistorical)}
     >
       <Popup className="flight-popup" offset={[0, -14]}>
         <div style={{
@@ -92,12 +155,52 @@ function MapResizeHandler() {
   return null;
 }
 
+// ── Custom Cluster Icon Factory ─────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function createClusterIcon(cluster: any) {
+  const count = cluster.getChildCount() as number;
+  let size: number;
+  let className: string;
+
+  if (count < 10) {
+    size = 36;
+    className = 'flight-cluster flight-cluster-sm';
+  } else if (count < 50) {
+    size = 44;
+    className = 'flight-cluster flight-cluster-md';
+  } else {
+    size = 52;
+    className = 'flight-cluster flight-cluster-lg';
+  }
+
+  return L.divIcon({
+    html: `<div><span>${count}</span></div>`,
+    className,
+    iconSize: L.point(size, size),
+  });
+}
+
 // ── Main Export ──────────────────────────────────────────────────
 interface FlightMapProps {
   flights: Flight[];
+  isHistorical?: boolean;
 }
 
-export function FlightMap({ flights }: FlightMapProps) {
+export function FlightMap({ flights, isHistorical = false }: FlightMapProps) {
+  // Memoize cluster options so the object reference stays stable across renders
+  const clusterOptions = useMemo(() => ({
+    chunkedLoading: true,
+    maxClusterRadius: 60,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true,
+    disableClusteringAtZoom: 12,
+    iconCreateFunction: createClusterIcon,
+    animate: true,
+    animateAddingMarkers: false,
+    removeOutsideVisibleBounds: true,
+  }), []);
+
   return (
     <MapContainer
       center={[7.8731, 80.7718]}
@@ -113,9 +216,11 @@ export function FlightMap({ flights }: FlightMapProps) {
         maxZoom={19}
       />
       <MapResizeHandler />
-      {flights.map((flight) => (
-        <RotatedPlaneMarker key={flight.flightId} flight={flight} />
-      ))}
+      <MarkerClusterGroup {...clusterOptions}>
+        {flights.map((flight) => (
+          <RotatedPlaneMarker key={flight.flightId} flight={flight} isHistorical={isHistorical} />
+        ))}
+      </MarkerClusterGroup>
     </MapContainer>
   );
 }

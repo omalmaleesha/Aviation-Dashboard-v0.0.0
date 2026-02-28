@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 import { List } from 'react-window';
 import {
@@ -203,7 +203,7 @@ function VirtualizedFlightRows({
 }
 
 // ── Main Component ────────────────────────────────────
-export function FlightsTable({ flights, connectionStatus }: FlightsTableProps) {
+export const FlightsTable = memo(function FlightsTable({ flights, connectionStatus }: FlightsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('callsign');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [search, setSearch] = useState('');
@@ -388,4 +388,4 @@ export function FlightsTable({ flights, connectionStatus }: FlightsTableProps) {
       )}
     </motion.div>
   );
-}
+});

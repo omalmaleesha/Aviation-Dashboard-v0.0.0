@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, TrendingUp, Plane, Timer } from 'lucide-react';
 import type { Flight, FuelAnalyticsResponse } from '../types/flight';
@@ -11,7 +12,7 @@ interface FlightCardProps {
   analyticsData?: FuelAnalyticsResponse | null;
 }
 
-export function FlightCard({ flight, onSelectTurnaround, analyticsData }: FlightCardProps) {
+export const FlightCard = memo(function FlightCard({ flight, onSelectTurnaround, analyticsData }: FlightCardProps) {
   const { flightId, origin, destination, status, progress, altitude, speed, heading } = flight;
   const style = STATUS_STYLES[status];
 
@@ -112,4 +113,4 @@ export function FlightCard({ flight, onSelectTurnaround, analyticsData }: Flight
       <FinancialInsights flight={flight} analyticsData={analyticsData} />
     </motion.div>
   );
-}
+});

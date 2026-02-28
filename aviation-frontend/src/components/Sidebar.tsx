@@ -14,7 +14,8 @@ import {
   DollarSign,
 } from 'lucide-react';
 
-export type SidebarView = 'map' | 'flights-table' | 'alerts' | 'turnarounds' | 'fuel-analytics';
+export type { SidebarView } from '../store/slices/uiSlice';
+import type { SidebarView } from '../store/slices/uiSlice';
 
 interface SidebarProps {
   activeView: SidebarView;

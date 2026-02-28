@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { FlightCard } from './FlightCard';
 import { AnimatePresence } from 'framer-motion';
 import { Radar } from 'lucide-react';
@@ -64,7 +64,7 @@ interface FlightIntelligenceProps {
   onSelectTurnaround?: (flight: Flight) => void;
 }
 
-export function FlightIntelligence({ flights, connectionStatus, onSelectTurnaround }: FlightIntelligenceProps) {
+export const FlightIntelligence = memo(function FlightIntelligence({ flights, connectionStatus, onSelectTurnaround }: FlightIntelligenceProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Simulate initial skeleton load to mimic data fetching UX
@@ -139,4 +139,4 @@ export function FlightIntelligence({ flights, connectionStatus, onSelectTurnarou
       )}
     </div>
   );
-}
+});

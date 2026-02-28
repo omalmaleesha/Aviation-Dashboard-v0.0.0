@@ -93,3 +93,88 @@ body,
   background: none !important;
   border: none !important;
 }
+
+/* ── Temporal Replay — Historical Marker Styling ─────── */
+.replay-marker {
+  filter: saturate(0.35) brightness(0.85);
+  transition: filter 0.4s ease;
+}
+
+/* Custom range slider thumb for the Replay Controller */
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+}
+
+/* ── Flight Marker Cluster Styling ──────────────────── */
+.flight-cluster {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #e2e8f0;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(59, 130, 246, 0.35),
+              0 0 24px rgba(59, 130, 246, 0.15);
+  transition: transform 0.2s ease;
+}
+.flight-cluster:hover {
+  transform: scale(1.15);
+}
+.flight-cluster div {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+.flight-cluster span {
+  line-height: 1;
+}
+
+/* Small cluster (< 10 markers) */
+.flight-cluster-sm {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.55) 0%, rgba(30, 64, 175, 0.75) 100%);
+  border: 2px solid rgba(96, 165, 250, 0.6);
+  font-size: 12px;
+}
+
+/* Medium cluster (10–49 markers) */
+.flight-cluster-md {
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.55) 0%, rgba(91, 33, 182, 0.75) 100%);
+  border: 2px solid rgba(167, 139, 250, 0.6);
+  font-size: 13px;
+}
+
+/* Large cluster (50+ markers) */
+.flight-cluster-lg {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.55) 0%, rgba(180, 83, 9, 0.75) 100%);
+  border: 2px solid rgba(251, 191, 36, 0.6);
+  font-size: 14px;
+}
+
+/* Hide default MarkerCluster styles that might leak through */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background: none !important;
+}
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background: none !important;
+}

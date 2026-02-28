@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 import { List } from 'react-window';
 import {
@@ -173,7 +173,7 @@ function VirtualizedAlertRows({
 }
 
 // ── Main Component ────────────────────────────────────
-export function AlertsTable({ alerts }: AlertsTableProps) {
+export const AlertsTable = memo(function AlertsTable({ alerts }: AlertsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('timestamp');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [search, setSearch] = useState('');
@@ -335,4 +335,4 @@ export function AlertsTable({ alerts }: AlertsTableProps) {
       )}
     </motion.div>
   );
-}
+});
