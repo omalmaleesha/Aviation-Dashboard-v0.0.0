@@ -10,10 +10,10 @@ from dotenv import load_dotenv
 
 load_dotenv()  # reads .env file in project root (if present)
 
-# ─── Base Airport (JFK) ───────────────────────────────────────────────
-BASE_AIRPORT_NAME = os.getenv("BASE_AIRPORT_NAME", "JFK")
-BASE_AIRPORT_LAT = float(os.getenv("BASE_AIRPORT_LAT", "40.6413"))
-BASE_AIRPORT_LNG = float(os.getenv("BASE_AIRPORT_LNG", "-73.7781"))
+# ─── Base Airport (BIA / Colombo) ─────────────────────────────────────
+BASE_AIRPORT_NAME = os.getenv("BASE_AIRPORT_NAME", "BIA")
+BASE_AIRPORT_LAT = float(os.getenv("BASE_AIRPORT_LAT", "7.1801"))
+BASE_AIRPORT_LNG = float(os.getenv("BASE_AIRPORT_LNG", "79.8841"))
 
 # ─── OpenSky Network Bounding Box ────────────────────────────────────
 # Format: (lat_min, lat_max, lng_min, lng_max)
@@ -64,6 +64,11 @@ MAX_SYNTHETIC_FLIGHTS = 1000
 
 # ─── Turnaround Logic Engine ─────────────────────────────────────────
 TURNAROUND_WINDOW_MINUTES = 45  # landing → target departure
+
+# ─── Black Box Replay Service ────────────────────────────────────────
+REPLAY_BUFFER_MINUTES = int(os.getenv("REPLAY_BUFFER_MINUTES", "30"))
+# maxlen = REPLAY_BUFFER_MINUTES / (OPENSKY_POLL_INTERVAL / 60)
+REPLAY_BUFFER_MAXLEN = int(REPLAY_BUFFER_MINUTES * 60 / OPENSKY_POLL_INTERVAL)
 
 # ─── Fuel Analytics Service ──────────────────────────────────────────
 FUEL_COST_PER_KG = float(os.getenv("FUEL_COST_PER_KG", "1.10"))

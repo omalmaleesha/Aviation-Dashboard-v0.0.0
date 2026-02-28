@@ -148,4 +148,39 @@ class FuelAnalyticsSummary(BaseModel):
     total_co2_kg: float = Field(0.0, description="Combined CO₂ emitted")
     avg_fuel_per_flight_kg: float = Field(0.0, description="Average fuel per flight")
     avg_cost_per_flight_usd: float = Field(0.0, description="Average cost per flight")
+
+
+# ═════════════════════════════════════════════════════════════════════
+# BLACK BOX REPLAY SERVICE
+# ═════════════════════════════════════════════════════════════════════
+
+class FlightSnapshot(BaseModel):
+    """Memory-optimised flight record — only essential fields for replay."""
+    id: str = Field(..., description="Flight callsign / ICAO24")
+    lat: float = Field(..., description="WGS-84 latitude")
+    lng: float = Field(..., description="WGS-84 longitude")
+    heading: float = Field(0.0, description="True heading in degrees")
+    status: FlightStatus = Field(FlightStatus.UNKNOWN, description="Flight status at capture time")
+
+
+class TimeKeyframe(BaseModel):
+    """One entry in the list of available replay timestamps."""
+    timestamp: str = Field(..., description="ISO 8601 UTC timestamp of the snapshot")
+    flight_count: int = Field(0, description="Number of flights captured in this keyframe")
+
+
+class ReplaySnapshotResponse(BaseModel):
+    """Returned when a specific timestamp is requested."""
+    timestamp: str = Field(..., description="Actual timestamp of the matched snapshot")
+    requested_timestamp: str = Field(..., description="Timestamp the client requested")
+    delta_seconds: float = Field(0.0, description="Abs difference between requested and matched (s)")
+    flight_count: int = Field(0, description="Number of flights in this snapshot")
+    flights: List[FlightSnapshot] = Field(default_factory=list, description="Flight snapshots")
+
+
+class ReplayKeyframesResponse(BaseModel):
+    """Returned when no timestamp is provided — lists available keyframes."""
+    buffer_window_minutes: int = Field(30, description="Configured replay window in minutes")
+    total_keyframes: int = Field(0, description="Number of snapshots currently in buffer")
+    keyframes: List[TimeKeyframe] = Field(default_factory=list)
     updated_every_seconds: int = Field(60, description="Analytics refresh interval in seconds")
