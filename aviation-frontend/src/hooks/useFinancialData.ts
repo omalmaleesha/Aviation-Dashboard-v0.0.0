@@ -6,7 +6,7 @@ const DEFAULT_FUEL_BURN_KG_HR = 2_500;
 const DEFAULT_FUEL_PRICE_USD_KG = 0.82;
 const DEFAULT_CO2_PER_KG_FUEL = 3.16;
 const DEFAULT_TOTAL_DISTANCE_KM = 3_800;
-const TICK_INTERVAL_MS = 80;
+const TICK_INTERVAL_MS = 2_000; // Was 80ms — 2s is enough for a smooth ticker without overloading React
 
 const FUEL_BURN_LOOKUP: Record<string, number> = {
   B738: 2_530, B739: 2_480, B77W: 7_500, B789: 5_800,
@@ -83,6 +83,8 @@ export function useFinancialData(
   const usesCDFA = flight.usesCDFA ?? (flight.status === 'DESCENDING' || flight.status === 'LANDING');
 
   // ── Animated ticker state ──────────────────────────────────────
+  // Snap display values directly to targets — avoid rapid setState loops.
+  // The ticker text is animated visually by FinancialInsights (CSS transitions).
   const [displayFuel, setDisplayFuel] = useState(targetFuelKg);
   const [displayCost, setDisplayCost] = useState(targetCostUsd);
   const [displayCo2, setDisplayCo2] = useState(targetCo2Kg);
@@ -97,36 +99,16 @@ export function useFinancialData(
   useEffect(() => { targetCo2Ref.current = targetCo2Kg; }, [targetCo2Kg]);
   useEffect(() => { burnRateRef.current = burnRateKgHr; }, [burnRateKgHr]);
 
-  // Smooth ticker animation — lerps each value toward its target
+  // Gentle ticker — updates state every TICK_INTERVAL_MS (2s)
+  // instead of the previous 80ms loop that was killing Chrome.
   useEffect(() => {
-    let lastTick = Date.now();
-    let timerId: ReturnType<typeof setTimeout>;
+    const timerId = setInterval(() => {
+      setDisplayFuel(targetFuelRef.current);
+      setDisplayCost(targetCostRef.current);
+      setDisplayCo2(targetCo2Ref.current);
+    }, TICK_INTERVAL_MS);
 
-    function lerp(prev: number, target: number, dtSec: number, rate: number): number {
-      const inc = (rate / 3600) * dtSec;
-      const gap = target - prev;
-      if (Math.abs(gap) < 0.01) return target;
-      const step = gap > 0
-        ? Math.min(gap, Math.max(inc, gap * 0.08))
-        : Math.max(gap, Math.min(-inc, gap * 0.08));
-      return prev + step;
-    }
-
-    function tick() {
-      const now = Date.now();
-      const dtSec = (now - lastTick) / 1000;
-      lastTick = now;
-
-      const rate = burnRateRef.current;
-      setDisplayFuel((prev) => lerp(prev, targetFuelRef.current, dtSec, rate));
-      setDisplayCost((prev) => lerp(prev, targetCostRef.current, dtSec, rate * DEFAULT_FUEL_PRICE_USD_KG));
-      setDisplayCo2((prev) => lerp(prev, targetCo2Ref.current, dtSec, rate * DEFAULT_CO2_PER_KG_FUEL));
-
-      timerId = setTimeout(tick, TICK_INTERVAL_MS);
-    }
-
-    timerId = setTimeout(tick, TICK_INTERVAL_MS);
-    return () => clearTimeout(timerId);
+    return () => clearInterval(timerId);
   }, []);
 
   return {

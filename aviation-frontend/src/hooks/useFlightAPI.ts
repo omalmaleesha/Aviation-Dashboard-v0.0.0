@@ -17,9 +17,15 @@ export function useFlightAPI() {
     try {
       const res = await fetch(API_URL);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const raw: RawFlightData[] = await res.json();
+      const data = await res.json();
+
+      // API may return a plain array or { flights: [...] }
+      const rawArray: RawFlightData[] = Array.isArray(data)
+        ? data
+        : data.flights ?? [];
+
       if (mountedRef.current) {
-        setFlights(raw.map(normalizeRawFlight));
+        setFlights(rawArray.map(normalizeRawFlight));
         setError(null);
         setIsLoading(false);
       }

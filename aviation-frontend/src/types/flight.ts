@@ -26,13 +26,15 @@ export interface Flight {
 
 // ── Raw shape coming from the backend REST / WebSocket ──────────
 export interface RawFlightData {
-  flightId: string;
-  origin: string | null;
-  destination: string | null;
+  /** Backend may send `flightId` or `id` — normalizer handles both. */
+  flightId?: string;
+  id?: string;
+  origin?: string | null;
+  destination?: string | null;
   status: string;             // e.g. "EN_ROUTE", "DESCENDING"
-  progress: number;
-  altitude: number;
-  speed: number;
+  progress?: number;
+  altitude?: number;
+  speed?: number;
   lat: number;
   lng: number;
   heading: number;
@@ -76,17 +78,18 @@ const STATUS_MAP: Record<string, FlightStatus> = {
 
 /** Convert a raw API flight object into the normalised internal Flight type. */
 export function normalizeRawFlight(raw: RawFlightData): Flight {
+  const resolvedId = raw.flightId ?? raw.id ?? 'UNKNOWN';
   return {
-    flightId:    raw.flightId,
-    callsign:    raw.flightId,                       // use flightId as callsign
+    flightId:    resolvedId,
+    callsign:    resolvedId,
     origin:      raw.origin ?? '—',
     destination:  raw.destination ?? '—',
     latitude:    raw.lat,
     longitude:   raw.lng,
-    altitude:    raw.altitude,
-    speed:       raw.speed,
+    altitude:    raw.altitude ?? 0,
+    speed:       raw.speed ?? 0,
     heading:     raw.heading,
-    progress:    raw.progress,
+    progress:    raw.progress ?? 0,
     status:      STATUS_MAP[raw.status] ?? 'EN ROUTE',
     distanceToAirport: raw.distance_to_airport ?? null,
   };

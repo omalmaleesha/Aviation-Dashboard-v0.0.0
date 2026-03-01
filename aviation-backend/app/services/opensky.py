@@ -24,6 +24,7 @@ from app.config import (
     OPENSKY_POLL_INTERVAL,
 )
 from app.models.schemas import FlightData, FlightStatus
+from app.services.replay import replay_service
 
 logger = logging.getLogger("skyops.opensky")
 
@@ -48,11 +49,19 @@ def last_poll() -> str | None:
 
 
 # ─── Synthetic Flight Generator (fallback) ──────────────────────────
-_AIRPORTS = ["KJFK", "KLAX", "KORD", "KATL", "KDFW", "KSFO", "KDEN", "KLAS", "KMIA", "KSEA"]
+_AIRPORTS = [
+    "VDPP", "VDSR", "WSSS", "VTBS", "WMKK", "RPLL", "WIII",
+    "VHHH", "RJTT", "RKSI", "VIDP", "VOMM", "VCBI", "VRMM",
+    "ZPPP", "VTSB", "VTSP", "RPVM", "WADD", "VYYY",
+]
 
 
 def _random_callsign() -> str:
-    prefix = random.choice(["AAL", "DAL", "UAL", "SWA", "JBU", "SKW", "ASA", "FFT"])
+    prefix = random.choice([
+        "CPA", "SIA", "THA", "MAS", "PAL", "CES", "CSN", "CCA",
+        "ANA", "JAL", "KAL", "AAR", "VJC", "ALK", "ULK", "AXM",
+        "AIC", "IGO", "JSA", "TWB",
+    ])
     number = "".join(random.choices(string.digits, k=random.randint(2, 4)))
     return f"{prefix}{number}"
 
@@ -183,6 +192,10 @@ async def start_polling() -> None:
                 _opensky_connected = False
 
             _last_poll_utc = datetime.now(timezone.utc).isoformat()
+
+            # ── Black-box replay: capture snapshot ───────────────────
+            await replay_service.capture_snapshot(_current_flights)
+
             await asyncio.sleep(OPENSKY_POLL_INTERVAL)
 
 

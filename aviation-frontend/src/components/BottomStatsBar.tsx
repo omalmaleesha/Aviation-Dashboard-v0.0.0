@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { AlertTriangle, Cloud, Plane, ShieldAlert, Loader2 } from 'lucide-react';
 import type { Flight, MetarResponse } from '../types/flight';
 
@@ -8,7 +9,7 @@ interface BottomStatsBarProps {
   metarLoading: boolean;
 }
 
-export function BottomStatsBar({ flights, alerts, metar, metarLoading }: BottomStatsBarProps) {
+export const BottomStatsBar = memo(function BottomStatsBar({ flights, alerts, metar, metarLoading }: BottomStatsBarProps) {
   const delayedCount = flights.filter((f) => f.status === 'DELAYED').length;
 
   return (
@@ -67,4 +68,4 @@ export function BottomStatsBar({ flights, alerts, metar, metarLoading }: BottomS
       </div>
     </div>
   );
-}
+});

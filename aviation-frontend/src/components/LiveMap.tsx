@@ -1,6 +1,8 @@
-import { Suspense } from 'react';
+import { Suspense, memo } from 'react';
 import { FlightMap } from './MapContent';
+import { ReplayController } from './ReplayController';
 import type { Flight } from '../types/flight';
+import type { ReplayMode, ReplayKeyframe } from '../types/replay';
 
 function MapLoadingFallback() {
   return (
@@ -17,14 +19,56 @@ function MapLoadingFallback() {
 
 interface LiveMapProps {
   flights: Flight[];
+  /** Replay state — when provided, the map switches between live/historical data. */
+  replayMode?: ReplayMode;
+  replayFlights?: Flight[];
+  replayOffsetSeconds?: number;
+  replayTimestamp?: string;
+  replayIsFetching?: boolean;
+  replayKeyframes?: ReplayKeyframe[];
+  replaySnapshotFlightCount?: number;
+  replaySnapshotDeltaSeconds?: number;
+  onReplayModeChange?: (mode: ReplayMode) => void;
+  onReplayOffsetChange?: (offset: number) => void;
 }
 
-export function LiveMap({ flights }: LiveMapProps) {
+export const LiveMap = memo(function LiveMap({
+  flights,
+  replayMode = 'LIVE',
+  replayFlights = [],
+  replayOffsetSeconds = 0,
+  replayTimestamp = new Date().toISOString(),
+  replayIsFetching = false,
+  replayKeyframes = [],
+  replaySnapshotFlightCount = 0,
+  replaySnapshotDeltaSeconds = 0,
+  onReplayModeChange,
+  onReplayOffsetChange,
+}: LiveMapProps) {
+  const isReplay = replayMode === 'REPLAY';
+  const displayFlights = isReplay ? replayFlights : flights;
+
   return (
-    <div className="w-full h-full rounded-xl overflow-hidden border border-gray-700/50">
+    <div className="w-full h-full rounded-xl overflow-hidden border border-gray-700/50 relative">
+      {/* Map Layer */}
       <Suspense fallback={<MapLoadingFallback />}>
-        <FlightMap flights={flights} />
+        <FlightMap flights={displayFlights} isHistorical={isReplay} />
       </Suspense>
+
+      {/* Replay Controller Overlay — sits at the bottom of the map */}
+      {onReplayModeChange && onReplayOffsetChange && (
+        <ReplayController
+          mode={replayMode}
+          offsetSeconds={replayOffsetSeconds}
+          replayTimestamp={replayTimestamp}
+          isFetching={replayIsFetching}
+          keyframes={replayKeyframes}
+          snapshotFlightCount={replaySnapshotFlightCount}
+          snapshotDeltaSeconds={replaySnapshotDeltaSeconds}
+          onModeChange={onReplayModeChange}
+          onOffsetChange={onReplayOffsetChange}
+        />
+      )}
     </div>
   );
-}
+});

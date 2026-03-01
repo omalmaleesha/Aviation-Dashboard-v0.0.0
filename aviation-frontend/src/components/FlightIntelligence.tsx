@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { FlightCard } from './FlightCard';
 import { AnimatePresence } from 'framer-motion';
 import { Radar } from 'lucide-react';
@@ -64,7 +64,7 @@ interface FlightIntelligenceProps {
   onSelectTurnaround?: (flight: Flight) => void;
 }
 
-export function FlightIntelligence({ flights, connectionStatus, onSelectTurnaround }: FlightIntelligenceProps) {
+export const FlightIntelligence = memo(function FlightIntelligence({ flights, connectionStatus, onSelectTurnaround }: FlightIntelligenceProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   // Simulate initial skeleton load to mimic data fetching UX
@@ -73,7 +73,12 @@ export function FlightIntelligence({ flights, connectionStatus, onSelectTurnarou
     return () => clearTimeout(timer);
   }, []);
 
-  // Compute stats
+  // Limit the number of flight cards rendered to prevent Chrome from choking
+  // on hundreds of FinancialInsights tickers + framer-motion animations.
+  const MAX_VISIBLE_CARDS = 30;
+  const visibleFlights = flights.slice(0, MAX_VISIBLE_CARDS);
+
+  // Compute stats (from all flights, not just visible)
   const statusCounts = flights.reduce<Record<string, number>>((acc, f) => {
     acc[f.status] = (acc[f.status] || 0) + 1;
     return acc;
@@ -101,13 +106,18 @@ export function FlightIntelligence({ flights, connectionStatus, onSelectTurnarou
           <SkeletonLoader />
         ) : (
           <AnimatePresence mode="popLayout">
-            {flights.map((flight) => (
+            {visibleFlights.map((flight) => (
               <FlightCard
                 key={flight.flightId}
                 flight={flight}
                 onSelectTurnaround={onSelectTurnaround}
               />
             ))}
+            {flights.length > MAX_VISIBLE_CARDS && (
+              <div className="text-center text-[10px] text-gray-500 font-mono py-2">
+                + {flights.length - MAX_VISIBLE_CARDS} more flights
+              </div>
+            )}
           </AnimatePresence>
         )}
       </div>
@@ -139,4 +149,4 @@ export function FlightIntelligence({ flights, connectionStatus, onSelectTurnarou
       )}
     </div>
   );
-}
+});
