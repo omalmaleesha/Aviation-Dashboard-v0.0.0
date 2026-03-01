@@ -36,21 +36,11 @@ export const FlightCard = memo(function FlightCard({ flight, onSelectTurnaround,
             <div className="text-[11px] text-gray-500 font-mono">{origin} → {destination}</div>
           </div>
         </div>
-        <motion.span
-          className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border ${style.bg} ${style.text} ${style.border}`}
-          animate={
-            status === 'DELAYED'
-              ? { opacity: [1, 0.5, 1] }
-              : {}
-          }
-          transition={
-            status === 'DELAYED'
-              ? { duration: 1.2, repeat: Infinity }
-              : {}
-          }
+        <span
+          className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border ${style.bg} ${style.text} ${style.border} ${status === 'DELAYED' ? 'animate-pulse' : ''}`}
         >
           {status}
-        </motion.span>
+        </span>
       </div>
 
       {/* Data Grid */}

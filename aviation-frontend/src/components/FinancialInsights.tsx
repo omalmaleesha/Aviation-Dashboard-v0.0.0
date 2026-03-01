@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, Flame, Leaf, TrendingUp, Wifi, WifiOff } from 'lucide-react';
 import type { Flight, FuelAnalyticsResponse } from '../types/flight';
@@ -24,29 +25,15 @@ function formatKg(value: number): string {
 }
 
 // ── Live Ticker Digit ────────────────────────────────────────────
-/** Renders an individual digit/character that slides in when it changes. */
-function TickerChar({ char, index }: { char: string; index: number }) {
-  return (
-    <motion.span
-      key={`${index}-${char}`}
-      initial={{ y: -12, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: 12, opacity: 0 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 28, mass: 0.6 }}
-      className="inline-block"
-    >
-      {char}
-    </motion.span>
-  );
-}
-
-/** Renders a string as individually-animated ticker characters. */
+/**
+ * Lightweight ticker — uses a single <span> with CSS transition
+ * instead of per-character framer-motion springs that were
+ * creating ~600 animated DOM nodes and crashing Chrome.
+ */
 function LiveTicker({ value, className }: { value: string; className?: string }) {
   return (
-    <span className={`inline-flex font-mono tabular-nums ${className ?? ''}`}>
-      {value.split('').map((ch, i) => (
-        <TickerChar key={`${i}-${ch}`} char={ch} index={i} />
-      ))}
+    <span className={`inline-block font-mono tabular-nums transition-opacity duration-300 ${className ?? ''}`}>
+      {value}
     </span>
   );
 }
@@ -77,7 +64,7 @@ interface FinancialInsightsProps {
   analyticsData?: FuelAnalyticsResponse | null;
 }
 
-export function FinancialInsights({ flight, analyticsData }: FinancialInsightsProps) {
+export const FinancialInsights = memo(function FinancialInsights({ flight, analyticsData }: FinancialInsightsProps) {
   const {
     fuelBurnKg,
     co2Kg,
@@ -134,14 +121,6 @@ export function FinancialInsights({ flight, analyticsData }: FinancialInsightsPr
           </div>
           <LiveTicker value={fuelText} className="text-sm font-bold text-orange-300" />
           <span className="text-[9px] text-gray-500 font-mono ml-1">kg</span>
-
-          {/* Subtle glow pulse */}
-          <motion.div
-            className="absolute inset-0 rounded-lg pointer-events-none"
-            animate={{ opacity: [0, 0.06, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ background: 'radial-gradient(circle at 30% 50%, #f97316, transparent 70%)' }}
-          />
         </div>
 
         {/* CO₂ Emissions */}
@@ -152,13 +131,6 @@ export function FinancialInsights({ flight, analyticsData }: FinancialInsightsPr
           </div>
           <LiveTicker value={co2Text} className="text-sm font-bold text-emerald-300" />
           <span className="text-[9px] text-gray-500 font-mono ml-1">kg</span>
-
-          <motion.div
-            className="absolute inset-0 rounded-lg pointer-events-none"
-            animate={{ opacity: [0, 0.06, 0] }}
-            transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-            style={{ background: 'radial-gradient(circle at 70% 50%, #10b981, transparent 70%)' }}
-          />
         </div>
       </div>
 
@@ -200,4 +172,4 @@ export function FinancialInsights({ flight, analyticsData }: FinancialInsightsPr
       </div>
     </motion.div>
   );
-}
+});

@@ -29,26 +29,38 @@ function createPlaneIcon(status: string, isHistorical = false) {
 
 // ── Smoothly-animated Rotated Marker ────────────────────────────
 /**
- * Uses internal state to animate Leaflet marker position via
- * `setLatLng` for a smooth glide effect between position updates.
+ * Uses internal state to animate Leaflet marker position.
+ * Uses a single rAF step (no continuous loop) to avoid
+ * saturating the main thread with hundreds of concurrent animations.
  */
 const ANIMATE_DURATION_MS = 800;
+const MIN_MOVE_THRESHOLD = 0.0001; // ~11 meters — skip animation for tiny moves
 
 function RotatedPlaneMarker({ flight, isHistorical = false }: { flight: Flight; isHistorical?: boolean }) {
   const markerRef = useRef<L.Marker>(null);
   const prevPos = useRef<[number, number]>([flight.latitude, flight.longitude]);
   const animFrameRef = useRef<number | null>(null);
 
-  // Smooth position interpolation
+  // Smooth position interpolation — only animate when movement is significant
   useEffect(() => {
     const marker = markerRef.current;
     if (!marker) return;
 
     const startPos = prevPos.current;
     const endPos: [number, number] = [flight.latitude, flight.longitude];
-    const startTime = performance.now();
 
+    // Skip animation if the movement is negligible
+    const dLat = Math.abs(endPos[0] - startPos[0]);
+    const dLng = Math.abs(endPos[1] - startPos[1]);
+    if (dLat < MIN_MOVE_THRESHOLD && dLng < MIN_MOVE_THRESHOLD) {
+      marker.setLatLng(endPos);
+      prevPos.current = endPos;
+      return;
+    }
+
+    const startTime = performance.now();
     const m = marker; // capture for closure
+
     function animate(now: number) {
       const elapsed = now - startTime;
       const t = Math.min(elapsed / ANIMATE_DURATION_MS, 1);

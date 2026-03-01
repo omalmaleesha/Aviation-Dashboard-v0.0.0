@@ -9,7 +9,7 @@ const ALERTS_API = `${API_BASE}/api/alerts`;
 const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 10;
 const MAX_ALERTS = 100;
-const ALERT_FLUSH_MS = 500; // Flush buffered alerts every 500ms (2 UI updates/sec)
+const ALERT_FLUSH_MS = 2_000; // Flush buffered alerts every 2s (was 500ms — was causing 2 Redux updates/sec)
 
 /**
  * Connects to the alerts REST + WebSocket endpoints and dispatches

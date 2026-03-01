@@ -17,7 +17,7 @@ const RECONNECT_DELAY = 3000;
 const MAX_RECONNECT_ATTEMPTS = 10;
 const REST_FLIGHTS_URL = `${API_BASE}/api/flights`;
 const REST_POLL_MS = 5_000;
-const THROTTLE_MS = 1_000; // Flush flight buffer → Redux once per second (was 2s)
+const THROTTLE_MS = 2_000; // Flush flight buffer → Redux every 2s (was 1s)
 
 /**
  * Connects to the flight WebSocket / REST fallback and dispatches

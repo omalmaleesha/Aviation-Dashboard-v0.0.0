@@ -73,7 +73,12 @@ export const FlightIntelligence = memo(function FlightIntelligence({ flights, co
     return () => clearTimeout(timer);
   }, []);
 
-  // Compute stats
+  // Limit the number of flight cards rendered to prevent Chrome from choking
+  // on hundreds of FinancialInsights tickers + framer-motion animations.
+  const MAX_VISIBLE_CARDS = 30;
+  const visibleFlights = flights.slice(0, MAX_VISIBLE_CARDS);
+
+  // Compute stats (from all flights, not just visible)
   const statusCounts = flights.reduce<Record<string, number>>((acc, f) => {
     acc[f.status] = (acc[f.status] || 0) + 1;
     return acc;
@@ -101,13 +106,18 @@ export const FlightIntelligence = memo(function FlightIntelligence({ flights, co
           <SkeletonLoader />
         ) : (
           <AnimatePresence mode="popLayout">
-            {flights.map((flight) => (
+            {visibleFlights.map((flight) => (
               <FlightCard
                 key={flight.flightId}
                 flight={flight}
                 onSelectTurnaround={onSelectTurnaround}
               />
             ))}
+            {flights.length > MAX_VISIBLE_CARDS && (
+              <div className="text-center text-[10px] text-gray-500 font-mono py-2">
+                + {flights.length - MAX_VISIBLE_CARDS} more flights
+              </div>
+            )}
           </AnimatePresence>
         )}
       </div>
