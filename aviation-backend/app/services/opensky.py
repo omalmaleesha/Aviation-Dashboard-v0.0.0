@@ -24,6 +24,8 @@ from app.config import (
     OPENSKY_POLL_INTERVAL,
 )
 from app.models.schemas import FlightData, FlightStatus
+from app.services.aircraft import infer_aircraft_type
+from app.services.airports import infer_origin_destination
 from app.services.replay import replay_service
 
 logger = logging.getLogger("skyops.opensky")
@@ -76,11 +78,17 @@ def _generate_synthetic_flights() -> List[FlightData]:
 
     flights: List[FlightData] = []
     for _ in range(random.randint(800, MAX_SYNTHETIC_FLIGHTS)):
+        callsign = _random_callsign()
         lat = random.uniform(lat_min, lat_max)
         lng = random.uniform(lng_min, lng_max)
         altitude = random.uniform(0, 42_000)
         speed = random.uniform(120, 520)
         heading = random.uniform(0, 360)
+        aircraft_type = infer_aircraft_type(
+            flight_id=callsign,
+            speed_kts=speed,
+            altitude_ft=altitude,
+        )
 
         status = FlightStatus.EN_ROUTE
         if altitude < 1_000:
@@ -90,7 +98,8 @@ def _generate_synthetic_flights() -> List[FlightData]:
 
         flights.append(
             FlightData(
-                flightId=_random_callsign(),
+                flightId=callsign,
+                aircraft_type=aircraft_type,
                 origin=random.choice(_AIRPORTS),
                 destination=random.choice(_AIRPORTS),
                 status=status,
@@ -129,6 +138,17 @@ def _parse_opensky_states(states: list) -> List[FlightData]:
             velocity_ms = sv[9] or 0.0
             speed_kts = velocity_ms * 1.94384  # m/s → knots
             heading = sv[10] or 0.0
+            aircraft_type = infer_aircraft_type(
+                flight_id=callsign,
+                speed_kts=float(speed_kts),
+                altitude_ft=float(altitude_ft),
+            )
+            origin_icao, destination_icao = infer_origin_destination(
+                lat=float(lat),
+                lng=float(lng),
+                heading_deg=float(heading),
+                speed_kts=float(speed_kts),
+            )
 
             status = FlightStatus.EN_ROUTE
             if altitude_ft < 50:
@@ -139,8 +159,9 @@ def _parse_opensky_states(states: list) -> List[FlightData]:
             flights.append(
                 FlightData(
                     flightId=callsign,
-                    origin=None,
-                    destination=None,
+                    aircraft_type=aircraft_type,
+                    origin=origin_icao,
+                    destination=destination_icao,
                     status=status,
                     progress=0.0,
                     altitude=round(altitude_ft, 0),

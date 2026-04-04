@@ -28,6 +28,7 @@ class FlightData(BaseModel):
     """
 
     flightId: str = Field(..., description="ICAO24 transponder address or synthetic ID")
+    aircraft_type: str = Field("UNKNOWN", description="Inferred aircraft type (A320, B737, B777, …)")
     origin: Optional[str] = Field(None, description="Origin airport ICAO code")
     destination: Optional[str] = Field(None, description="Destination airport ICAO code")
     status: FlightStatus = Field(FlightStatus.UNKNOWN, description="Computed flight status")
@@ -184,3 +185,38 @@ class ReplayKeyframesResponse(BaseModel):
     total_keyframes: int = Field(0, description="Number of snapshots currently in buffer")
     keyframes: List[TimeKeyframe] = Field(default_factory=list)
     updated_every_seconds: int = Field(60, description="Analytics refresh interval in seconds")
+
+
+# ─── Flight Route Line (map polyline) ───────────────────────────────
+class RoutePoint(BaseModel):
+    """Single coordinate point in a flight route polyline."""
+    lat: float = Field(..., description="WGS-84 latitude")
+    lng: float = Field(..., description="WGS-84 longitude")
+    timestamp: str = Field(..., description="ISO 8601 UTC timestamp of this sampled position")
+
+
+class FlightRouteResponse(BaseModel):
+    """Returned by GET /api/flights/{flight_id}/route for map line rendering."""
+    flight_id: str = Field(..., description="Requested flight identifier")
+    points: List[RoutePoint] = Field(default_factory=list, description="Ordered route polyline points")
+    projected_points: List[RoutePoint] = Field(
+        default_factory=list,
+        description="Forward route points from current position to destination/predicted endpoint",
+    )
+    full_route_points: List[RoutePoint] = Field(
+        default_factory=list,
+        description="Complete line points (historical + forward projection)",
+    )
+    start_point: Optional[RoutePoint] = Field(None, description="First known route point")
+    current_point: Optional[RoutePoint] = Field(None, description="Current aircraft position")
+    end_point: Optional[RoutePoint] = Field(None, description="Expected destination/predicted end point")
+    origin_icao: Optional[str] = Field(None, description="Origin ICAO code if available")
+    destination_icao: Optional[str] = Field(None, description="Destination ICAO code if available")
+    route_source: str = Field(
+        "HISTORY_ONLY",
+        description="How end-point was derived: DESTINATION_AIRPORT | HEADING_PROJECTION | HISTORY_ONLY",
+    )
+    point_count: int = Field(0, description="Number of points in route")
+    start_timestamp: Optional[str] = Field(None, description="First point timestamp")
+    end_timestamp: Optional[str] = Field(None, description="Last point timestamp")
+    sampled_from_keyframes: int = Field(0, description="Replay snapshots inspected to build the route")

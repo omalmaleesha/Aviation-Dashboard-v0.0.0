@@ -21,6 +21,7 @@ from app.config import (
     CO2_PER_KG_FUEL,
     FUEL_ANALYTICS_INTERVAL,
 )
+from app.services.aircraft import infer_aircraft_type
 from app.services.opensky import get_current_flights
 
 logger = logging.getLogger("skyops.fuel_analytics")
@@ -66,15 +67,8 @@ def _resolve_profile(flight_id: str) -> dict:
     Heuristic: check if the callsign prefix hints at narrow/wide-body.
     Falls back to the default profile.
     """
-    upper = flight_id.upper()
-    for type_key, profile in BURN_RATES.items():
-        if type_key in upper:
-            return profile
-    # Heuristic — heavy operators → B777 profile, others → A320
-    heavy_prefixes = ("UAE", "BAW", "QTR", "SIA", "CPA", "ANA")
-    if any(upper.startswith(p) for p in heavy_prefixes):
-        return BURN_RATES["B777"]
-    return _DEFAULT_PROFILE
+    aircraft_type = infer_aircraft_type(flight_id)
+    return BURN_RATES.get(aircraft_type, _DEFAULT_PROFILE)
 
 
 def calculate_burn(
