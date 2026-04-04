@@ -24,6 +24,7 @@ interface FlightsTableProps {
   flights: Flight[];
   connectionStatus: ConnectionStatus;
   onFlightDoubleClick?: (flightId: string) => void;
+  onAircraftTypeClick?: (flight: Flight) => void;
 }
 
 // ── Status Badge ──────────────────────────────────────
@@ -79,6 +80,7 @@ const ROW_HEIGHT = 44; // px per row
 interface FlightRowProps {
   flights: Flight[];
   onFlightDoubleClick?: (flightId: string) => void;
+  onAircraftTypeClick?: (flight: Flight) => void;
 }
 
 function FlightRowComponent({
@@ -86,12 +88,14 @@ function FlightRowComponent({
   style,
   flights,
   onFlightDoubleClick,
+  onAircraftTypeClick,
 }: {
   ariaAttributes: Record<string, unknown>;
   index: number;
   style: CSSProperties;
   flights: Flight[];
   onFlightDoubleClick?: (flightId: string) => void;
+  onAircraftTypeClick?: (flight: Flight) => void;
 }) {
   const flight = flights[index];
   if (!flight) return null;
@@ -115,7 +119,17 @@ function FlightRowComponent({
       </div>
       {/* Aircraft */}
       <div className="px-4 py-2 flex-1 min-w-0">
-        <span className="text-xs font-mono font-semibold text-violet-400">{flight.aircraftType ?? 'UNKNOWN'}</span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAircraftTypeClick?.(flight);
+          }}
+          className="text-xs font-mono font-semibold text-violet-400 hover:text-violet-300 underline-offset-2 hover:underline"
+          title="View aircraft details"
+        >
+          {flight.aircraftType ?? 'UNKNOWN'}
+        </button>
       </div>
       {/* Origin */}
       <div className="px-4 py-2 flex-1 min-w-0">
@@ -155,12 +169,14 @@ function VirtualizedFlightRows({
   isConnecting,
   search,
   onFlightDoubleClick,
+  onAircraftTypeClick,
 }: {
   flights: Flight[];
   isConnecting: boolean;
   search: string;
   columnCount: number;
   onFlightDoubleClick?: (flightId: string) => void;
+  onAircraftTypeClick?: (flight: Flight) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(400);
@@ -205,7 +221,7 @@ function VirtualizedFlightRows({
         rowComponent={FlightRowComponent}
         rowCount={flights.length}
         rowHeight={ROW_HEIGHT}
-        rowProps={{ flights, onFlightDoubleClick }}
+  rowProps={{ flights, onFlightDoubleClick, onAircraftTypeClick }}
         overscanCount={20}
         style={{ height, width: '100%' }}
         className="scrollbar-thin"
@@ -215,7 +231,7 @@ function VirtualizedFlightRows({
 }
 
 // ── Main Component ────────────────────────────────────
-export const FlightsTable = memo(function FlightsTable({ flights, connectionStatus, onFlightDoubleClick }: FlightsTableProps) {
+export const FlightsTable = memo(function FlightsTable({ flights, connectionStatus, onFlightDoubleClick, onAircraftTypeClick }: FlightsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('callsign');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [search, setSearch] = useState('');
@@ -379,6 +395,7 @@ export const FlightsTable = memo(function FlightsTable({ flights, connectionStat
           search={search}
           columnCount={columns.length}
           onFlightDoubleClick={onFlightDoubleClick}
+          onAircraftTypeClick={onAircraftTypeClick}
         />
       </div>
 

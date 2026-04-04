@@ -11,13 +11,14 @@ import { AlertToast } from './components/AlertToast';
 import { TurnaroundDashboard } from './components/TurnaroundDashboard';
 import { TurnaroundsPage } from './components/TurnaroundsPage';
 import { FuelAnalyticsPage } from './components/FuelAnalyticsPage';
+import { AircraftDetailsPage } from './components/AircraftDetailsPage';
 import { useFlightData } from './hooks/useFlightData';
 import { useMetar } from './hooks/useMetar';
 import { useAlerts } from './hooks/useAlerts';
 import { useTurnaround } from './hooks/useTurnaround';
 import { useReplay } from './hooks/useReplay';
 import { useAppDispatch, useAppSelector } from './store';
-import { setActiveView, setTurnaroundFlight } from './store/slices/uiSlice';
+import { setActiveView, setAircraftDetailsContext, setTurnaroundFlight } from './store/slices/uiSlice';
 import type { Flight } from './types/flight';
 
 const viewTransition = {
@@ -34,6 +35,7 @@ export function Dashboard() {
   // ── Redux-backed state (read from store) ────────────────────
   const activeView = useAppSelector((s) => s.ui.activeView);
   const turnaroundFlight = useAppSelector((s) => s.ui.turnaroundFlight);
+  const aircraftDetails = useAppSelector((s) => s.ui.aircraftDetails);
 
   // ── Side-effect hooks (now dispatch into Redux internally) ──
   const { flights, connectionStatus } = useFlightData();
@@ -91,6 +93,23 @@ export function Dashboard() {
     },
     [dispatch],
   );
+
+  const handleAircraftTypeClick = useCallback(
+    (flight: Flight) => {
+      dispatch(
+        setAircraftDetailsContext({
+          flightId: flight.flightId,
+          aircraftTypeId: flight.aircraftType ?? null,
+        }),
+      );
+      dispatch(setActiveView('aircraft-details'));
+    },
+    [dispatch],
+  );
+
+  const handleBackToTable = useCallback(() => {
+    dispatch(setActiveView('flights-table'));
+  }, [dispatch]);
 
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 text-white overflow-hidden">
@@ -151,6 +170,19 @@ export function Dashboard() {
                   flights={flights}
                   connectionStatus={connectionStatus}
                   onFlightDoubleClick={handleFlightDoubleClick}
+                  onAircraftTypeClick={handleAircraftTypeClick}
+                />
+              </motion.div>
+            ) : activeView === 'aircraft-details' ? (
+              <motion.div
+                key="aircraft-details-view"
+                className="absolute inset-0 overflow-hidden"
+                {...viewTransition}
+              >
+                <AircraftDetailsPage
+                  flightId={aircraftDetails.flightId}
+                  aircraftTypeId={aircraftDetails.aircraftTypeId}
+                  onBack={handleBackToTable}
                 />
               </motion.div>
             ) : activeView === 'alerts' ? (

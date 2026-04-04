@@ -186,3 +186,36 @@ export interface FlightRouteResponse {
   end_timestamp: string;
   sampled_from_keyframes: number;
 }
+
+// ── Aircraft Type Details endpoints ─────────────────────────────────
+export interface AircraftImageSet {
+  exteriorImage: string;
+  interiorImage: string;
+  sideViewImage: string;
+  cockpitImage: string;
+}
+
+export interface AircraftTypeDetail {
+  typeId: string;
+  modelName: string;
+  manufacturer: string;
+  category: string;
+  length: number | string;
+  wingspan: number | string;
+  height: number | string;
+  maxTakeoffWeight: number | string;
+  passengerCapacity: number | string;
+  crewCapacity: number | string;
+  cargoCapacity: number | string;
+  maxSpeed: number | string;
+  cruiseSpeed: number | string;
+  range: number | string;
+  fuelCapacity: number | string;
+  engineType: string;
+  numberOfEngines: number | string;
+  fuelType: string;
+  maintenanceInterval: number | string;
+  requiredRunwayLength: number | string;
+  serviceCeiling: number | string;
+  images: AircraftImageSet;
+}
