@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NavigationHeader } from './components/NavigationHeader';
 import { LiveMap } from './components/LiveMap';
@@ -29,6 +29,7 @@ const viewTransition = {
 
 export function Dashboard() {
   const dispatch = useAppDispatch();
+  const [focusFlightId, setFocusFlightId] = useState<string | null>(null);
 
   // ── Redux-backed state (read from store) ────────────────────
   const activeView = useAppSelector((s) => s.ui.activeView);
@@ -83,6 +84,14 @@ export function Dashboard() {
     [dispatch],
   );
 
+  const handleFlightDoubleClick = useCallback(
+    (flightId: string) => {
+      setFocusFlightId(flightId);
+      dispatch(setActiveView('map'));
+    },
+    [dispatch],
+  );
+
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 text-white overflow-hidden">
       {/* Real-time alert toast */}
@@ -109,6 +118,7 @@ export function Dashboard() {
                 <div className="flex-1 p-4 bg-slate-900/10">
                   <LiveMap
                     flights={flights}
+                    focusFlightId={focusFlightId}
                     replayMode={replayMode}
                     replayFlights={replayFlights}
                     replayOffsetSeconds={replayOffsetSeconds}
@@ -140,6 +150,7 @@ export function Dashboard() {
                 <FlightsTable
                   flights={flights}
                   connectionStatus={connectionStatus}
+                  onFlightDoubleClick={handleFlightDoubleClick}
                 />
               </motion.div>
             ) : activeView === 'alerts' ? (

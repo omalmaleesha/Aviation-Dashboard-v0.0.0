@@ -23,6 +23,7 @@ type SortDir = 'asc' | 'desc';
 interface FlightsTableProps {
   flights: Flight[];
   connectionStatus: ConnectionStatus;
+  onFlightDoubleClick?: (flightId: string) => void;
 }
 
 // ── Status Badge ──────────────────────────────────────
@@ -77,17 +78,20 @@ const ROW_HEIGHT = 44; // px per row
 
 interface FlightRowProps {
   flights: Flight[];
+  onFlightDoubleClick?: (flightId: string) => void;
 }
 
 function FlightRowComponent({
   index,
   style,
   flights,
+  onFlightDoubleClick,
 }: {
   ariaAttributes: Record<string, unknown>;
   index: number;
   style: CSSProperties;
   flights: Flight[];
+  onFlightDoubleClick?: (flightId: string) => void;
 }) {
   const flight = flights[index];
   if (!flight) return null;
@@ -95,7 +99,9 @@ function FlightRowComponent({
   return (
     <div
       style={style}
-      className="flex items-center border-b border-gray-800/20 hover:bg-slate-800/30 transition-colors group"
+      className="flex items-center border-b border-gray-800/20 hover:bg-slate-800/30 transition-colors group cursor-pointer"
+      onDoubleClick={() => onFlightDoubleClick?.(flight.flightId)}
+      title="Double-click to show this flight on map"
     >
       {/* Flight ID */}
       <div className="px-4 py-2 flex-1 min-w-0">
@@ -106,6 +112,10 @@ function FlightRowComponent({
           />
           <span className="text-sm font-mono font-bold text-white truncate">{flight.flightId}</span>
         </div>
+      </div>
+      {/* Aircraft */}
+      <div className="px-4 py-2 flex-1 min-w-0">
+        <span className="text-xs font-mono font-semibold text-violet-400">{flight.aircraftType ?? 'UNKNOWN'}</span>
       </div>
       {/* Origin */}
       <div className="px-4 py-2 flex-1 min-w-0">
@@ -144,11 +154,13 @@ function VirtualizedFlightRows({
   flights,
   isConnecting,
   search,
+  onFlightDoubleClick,
 }: {
   flights: Flight[];
   isConnecting: boolean;
   search: string;
   columnCount: number;
+  onFlightDoubleClick?: (flightId: string) => void;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(400);
@@ -193,7 +205,7 @@ function VirtualizedFlightRows({
         rowComponent={FlightRowComponent}
         rowCount={flights.length}
         rowHeight={ROW_HEIGHT}
-        rowProps={{ flights }}
+        rowProps={{ flights, onFlightDoubleClick }}
         overscanCount={20}
         style={{ height, width: '100%' }}
         className="scrollbar-thin"
@@ -203,7 +215,7 @@ function VirtualizedFlightRows({
 }
 
 // ── Main Component ────────────────────────────────────
-export const FlightsTable = memo(function FlightsTable({ flights, connectionStatus }: FlightsTableProps) {
+export const FlightsTable = memo(function FlightsTable({ flights, connectionStatus, onFlightDoubleClick }: FlightsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('callsign');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [search, setSearch] = useState('');
@@ -231,6 +243,7 @@ export const FlightsTable = memo(function FlightsTable({ flights, connectionStat
         (f) =>
           f.callsign.toLowerCase().includes(q) ||
           f.flightId.toLowerCase().includes(q) ||
+          (f.aircraftType ?? '').toLowerCase().includes(q) ||
           f.origin.toLowerCase().includes(q) ||
           f.destination.toLowerCase().includes(q) ||
           f.status.toLowerCase().includes(q)
@@ -252,6 +265,7 @@ export const FlightsTable = memo(function FlightsTable({ flights, connectionStat
   // Column definitions
   const columns: { key: SortKey; label: string; align?: string }[] = [
     { key: 'flightId', label: 'Flight' },
+  { key: 'aircraftType', label: 'Aircraft' },
     { key: 'origin', label: 'Origin' },
     { key: 'destination', label: 'Destination' },
     { key: 'altitude', label: 'Altitude (ft)', align: 'right' },
@@ -364,6 +378,7 @@ export const FlightsTable = memo(function FlightsTable({ flights, connectionStat
           isConnecting={isConnecting}
           search={search}
           columnCount={columns.length}
+          onFlightDoubleClick={onFlightDoubleClick}
         />
       </div>
 
