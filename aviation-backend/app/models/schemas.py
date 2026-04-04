@@ -220,3 +220,36 @@ class FlightRouteResponse(BaseModel):
     start_timestamp: Optional[str] = Field(None, description="First point timestamp")
     end_timestamp: Optional[str] = Field(None, description="Last point timestamp")
     sampled_from_keyframes: int = Field(0, description="Replay snapshots inspected to build the route")
+
+
+# ─── Aircraft Type Detail Catalog ───────────────────────────────────
+class AircraftImageSet(BaseModel):
+    exteriorImage: Optional[str] = Field(None, description="Example outside/exterior image URL")
+    interiorImage: Optional[str] = Field(None, description="Example inside/cabin image URL")
+    sideViewImage: Optional[str] = Field(None, description="Example side-view image URL")
+    cockpitImage: Optional[str] = Field(None, description="Example cockpit image URL")
+
+
+class AircraftTypeDetail(BaseModel):
+    typeId: str
+    modelName: str
+    manufacturer: str
+    category: str
+    length: float
+    wingspan: float
+    height: float
+    maxTakeoffWeight: float
+    passengerCapacity: int
+    crewCapacity: int
+    cargoCapacity: float
+    maxSpeed: float
+    cruiseSpeed: float
+    range: float
+    fuelCapacity: float
+    engineType: str
+    numberOfEngines: int
+    fuelType: str
+    maintenanceInterval: str
+    requiredRunwayLength: float
+    serviceCeiling: float
+    images: AircraftImageSet = Field(default_factory=AircraftImageSet)

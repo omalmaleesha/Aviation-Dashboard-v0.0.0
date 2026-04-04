@@ -7,6 +7,8 @@ Wires together all 4 Core Pillars:
   4. Reliability       (CORS, Pydantic, Health Check)
 """
 
+#uv run fastapi dev
+
 from __future__ import annotations
 
 import asyncio
@@ -24,6 +26,7 @@ from app.routes.alerts import router as alerts_router
 from app.routes.turnaround import router as turnaround_router
 from app.routes.fuel_analytics import router as fuel_analytics_router
 from app.routes.replay import router as replay_router
+from app.routes.aircraft_types import router as aircraft_types_router
 from app.services.opensky import start_polling, stop_polling
 from app.services.websocket import manager
 from app.services.alert_ws import alert_manager
@@ -86,6 +89,7 @@ app.include_router(alerts_router)
 app.include_router(turnaround_router)
 app.include_router(fuel_analytics_router)
 app.include_router(replay_router)
+app.include_router(aircraft_types_router)
 
 
 @app.get("/", tags=["root"])
