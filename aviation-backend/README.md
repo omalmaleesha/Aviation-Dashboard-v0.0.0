@@ -167,6 +167,7 @@ Interactive docs at **http://localhost:8000/docs**.
 | `POST` | `/api/comms/messages/{message_id}/ack` | Acknowledge a comms message (idempotent) |
 | `GET` | `/api/comms/messages` | Filtered/paginated comms message history |
 | `GET` | `/api/comms/channels` | Channel health/status list |
+| `GET` | `/api/audit/timeline` | Incident timeline + audit log with filters/pagination |
 
 ### WebSocket
 
