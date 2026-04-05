@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import type { AlertData } from '../types/flight';
 import { API_BASE, WS_ALERTS_URL } from '../config';
+import { authFetch } from '../auth/authFetch';
 import { useAppDispatch, useAppSelector } from '../store';
 import { setAlerts, pushAlertsBatch, dismissLatestAlert } from '../store/slices/alertsSlice';
 import { useInterval } from './useInterval';
@@ -50,7 +51,7 @@ export function useAlerts() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(ALERTS_API);
+  const res = await authFetch(ALERTS_API);
         if (!res.ok) return;
         const data: AlertData[] = await res.json();
         if (!cancelled) {

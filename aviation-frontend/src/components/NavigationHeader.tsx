@@ -1,12 +1,16 @@
 import { UTCClock } from './UTCClock';
-import { Plane, Radio } from 'lucide-react';
+import { Plane, Radio, Palette, Camera } from 'lucide-react';
 import type { ConnectionStatus } from '../hooks/useFlightData';
+import { COCKPIT_THEMES } from '../theme/cockpitThemes';
 
 interface NavigationHeaderProps {
   connectionStatus: ConnectionStatus;
+  activeTheme: string;
+  onThemeChange: (themeId: string) => void;
+  onShareSnapshot: () => void;
 }
 
-export function NavigationHeader({ connectionStatus }: NavigationHeaderProps) {
+export function NavigationHeader({ connectionStatus, activeTheme, onThemeChange, onShareSnapshot }: NavigationHeaderProps) {
   const isLive = connectionStatus === 'connected';
 
   return (
@@ -33,7 +37,32 @@ export function NavigationHeader({ connectionStatus }: NavigationHeaderProps) {
           </span>
         </div>
 
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4">
+          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1.5 bg-slate-900/50 rounded-lg border border-gray-800/40">
+            <Palette className="w-3.5 h-3.5 text-violet-300" />
+            <select
+              value={activeTheme}
+              onChange={(e) => onThemeChange(e.target.value)}
+              className="bg-transparent text-[10px] uppercase tracking-wider font-mono text-gray-200 outline-none"
+              title="Cockpit Theme"
+            >
+              {COCKPIT_THEMES.map((theme) => (
+                <option key={theme.id} value={theme.id} className="bg-slate-900 text-gray-200 normal-case">
+                  {theme.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            onClick={onShareSnapshot}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-900/55 border border-gray-800/50 rounded-lg hover:border-violet-400/40 hover:bg-slate-800/70 transition-colors"
+            title="Share Snapshot"
+          >
+            <Camera className="w-3.5 h-3.5 text-violet-300" />
+            <span className="text-[10px] font-mono uppercase tracking-wider text-gray-200 hidden sm:inline">Snapshot</span>
+          </button>
+
           {/* UTC Clock */}
           <UTCClock />
 

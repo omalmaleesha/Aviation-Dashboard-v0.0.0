@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { API_BASE } from '../config';
 import type { FlightRouteResponse } from '../types/flight';
+import { authFetch } from '../auth/authFetch';
 
 const DEFAULT_MIN_POINTS = 2;
 const NOT_FOUND_COOLDOWN_MS = 30_000;
@@ -48,7 +49,7 @@ export function useFlightRoute(minPoints = DEFAULT_MIN_POINTS) {
 
       try {
         const url = `${API_BASE}/api/flights/${encodeURIComponent(trimmedId)}/route?min_points=${minPoints}`;
-        const res = await fetch(url, { signal: controller.signal });
+  const res = await authFetch(url, { signal: controller.signal });
 
         if (res.status === 404) {
           notFoundUntilRef.current.set(trimmedId.toLowerCase(), Date.now() + NOT_FOUND_COOLDOWN_MS);

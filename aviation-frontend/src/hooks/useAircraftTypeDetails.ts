@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { API_BASE } from '../config';
 import type { AircraftTypeDetail } from '../types/flight';
+import { authFetch } from '../auth/authFetch';
 
 interface UseAircraftTypeDetailsArgs {
   flightId?: string | null;
@@ -82,14 +83,14 @@ export function useAircraftTypeDetails({ flightId, aircraftTypeId }: UseAircraft
         let response: Response | null = null;
 
         if (normalizedFlightId) {
-          response = await fetch(
+          response = await authFetch(
             `${API_BASE}/api/flights/${encodeURIComponent(normalizedFlightId)}/aircraft-type`,
             { signal: controller.signal, cache: 'no-store' },
           );
         }
 
         if ((!response || response.status === 404) && normalizedTypeId) {
-          response = await fetch(
+          response = await authFetch(
             `${API_BASE}/api/aircraft-types/${encodeURIComponent(normalizedTypeId)}`,
             { signal: controller.signal, cache: 'no-store' },
           );

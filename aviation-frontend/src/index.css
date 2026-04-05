@@ -23,6 +23,32 @@ body,
   -moz-osx-font-smoothing: grayscale;
 }
 
+.cockpit-shell {
+  transition: filter 220ms ease, background 220ms ease;
+}
+
+html[data-cockpit-theme='midnight-radar'] .cockpit-shell {
+  filter: none;
+}
+
+html[data-cockpit-theme='neon-atc'] .cockpit-shell {
+  filter: hue-rotate(18deg) saturate(1.25) contrast(1.04);
+}
+
+html[data-cockpit-theme='amber-avionics'] .cockpit-shell {
+  filter: hue-rotate(-28deg) saturate(1.18) brightness(1.02);
+}
+
+html[data-cockpit-theme='stealth-mono'] .cockpit-shell {
+  filter: grayscale(0.42) contrast(1.08) brightness(0.95);
+}
+
+html[data-cockpit-theme='neon-atc'] .leaflet-container,
+html[data-cockpit-theme='amber-avionics'] .leaflet-container,
+html[data-cockpit-theme='stealth-mono'] .leaflet-container {
+  filter: none !important;
+}
+
 /* ── Scrollbar ──────────────────────────────────────── */
 .scrollbar-thin::-webkit-scrollbar {
   width: 4px;

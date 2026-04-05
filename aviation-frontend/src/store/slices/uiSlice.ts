@@ -1,7 +1,15 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { Flight } from '../../types/flight';
 
-export type SidebarView = 'map' | 'flights-table' | 'alerts' | 'turnarounds' | 'fuel-analytics' | 'aircraft-details';
+export type SidebarView =
+  | 'map'
+  | 'flights-table'
+  | 'flighttype-explorer'
+  | 'alerts'
+  | 'turnarounds'
+  | 'fuel-analytics'
+  | 'settings'
+  | 'aircraft-details';
 
 interface UiState {
   activeView: SidebarView;

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { FuelAnalyticsResponse, PaginatedAnalyticsResponse } from '../types/flight';
 import { API_BASE } from '../config';
+import { authFetch } from '../auth/authFetch';
 
 /**
  * On-demand analytics fetcher.
@@ -26,7 +27,7 @@ export function useFuelAnalyticsAPI() {
   const fetchOne = useCallback(async (flightId: string): Promise<FuelAnalyticsResponse | null> => {
     setDetailLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/analytics/${encodeURIComponent(flightId)}`);
+  const res = await authFetch(`${API_BASE}/api/analytics/${encodeURIComponent(flightId)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: FuelAnalyticsResponse = await res.json();
       if (mountedRef.current) {
@@ -48,7 +49,7 @@ export function useFuelAnalyticsAPI() {
   const fetchPage = useCallback(async (limit = 50, offset = 0): Promise<PaginatedAnalyticsResponse | null> => {
     setPageLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/analytics?limit=${limit}&offset=${offset}`);
+  const res = await authFetch(`${API_BASE}/api/analytics?limit=${limit}&offset=${offset}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 

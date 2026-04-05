@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Map,
   TableProperties,
+  Plane,
   ChevronLeft,
   ChevronRight,
   Radar,
@@ -12,6 +13,7 @@ import {
   ShieldAlert,
   Timer,
   DollarSign,
+  LogOut,
 } from 'lucide-react';
 
 export type { SidebarView } from '../store/slices/uiSlice';
@@ -20,6 +22,7 @@ import type { SidebarView } from '../store/slices/uiSlice';
 interface SidebarProps {
   activeView: SidebarView;
   onViewChange: (view: SidebarView) => void;
+  onLogout: () => void;
 }
 
 interface NavItem {
@@ -43,6 +46,12 @@ const NAV_ITEMS: NavItem[] = [
     description: 'Tabular flight data view',
   },
   {
+    id: 'flighttype-explorer',
+    label: 'Flight Types',
+    icon: <Plane className="w-5 h-5" />,
+    description: 'Aircraft type explorer',
+  },
+  {
     id: 'alerts',
     label: 'Alerts',
     icon: <ShieldAlert className="w-5 h-5" />,
@@ -62,7 +71,7 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export function Sidebar({ activeView, onViewChange }: SidebarProps) {
+export function Sidebar({ activeView, onViewChange, onLogout }: SidebarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -161,7 +170,6 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
         {[
           { icon: <BarChart3 className="w-4 h-4" />, label: 'Analytics' },
           { icon: <Radio className="w-4 h-4" />, label: 'Comms' },
-          { icon: <Settings className="w-4 h-4" />, label: 'Settings' },
         ].map((item) => (
           <div
             key={item.label}
@@ -186,6 +194,84 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
             </AnimatePresence>
           </div>
         ))}
+
+        <button
+          onClick={() => onViewChange('settings')}
+          title={!isExpanded ? 'Settings' : undefined}
+          className={`
+            w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative
+            ${isExpanded ? 'px-3 py-2.5 mt-2' : 'px-0 py-2.5 mt-2 justify-center'}
+            ${
+              activeView === 'settings'
+                ? 'bg-aviation-blue/15 text-aviation-blue border border-aviation-blue/25'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-slate-800/50 border border-transparent'
+            }
+          `}
+        >
+          {activeView === 'settings' && (
+            <motion.div
+              layoutId="sidebar-active"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-aviation-blue rounded-r-full"
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            />
+          )}
+
+          <span className="flex-shrink-0">
+            <Settings className="w-4 h-4" />
+          </span>
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="text-[10px] font-mono uppercase tracking-wider overflow-hidden whitespace-nowrap"
+              >
+                Settings
+              </motion.span>
+            )}
+          </AnimatePresence>
+
+          {!isExpanded && (
+            <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-800 border border-gray-700/50 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap">
+              <div className="text-[10px] font-semibold text-white">Settings</div>
+              <div className="text-[9px] text-gray-500 font-mono">System preferences</div>
+            </div>
+          )}
+        </button>
+
+        <button
+          onClick={onLogout}
+          title={!isExpanded ? 'Logout' : undefined}
+          className={`
+            w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative
+            ${isExpanded ? 'px-3 py-2.5 mt-2' : 'px-0 py-2.5 mt-2 justify-center'}
+            text-red-300/90 hover:text-red-200 hover:bg-red-500/10 border border-transparent hover:border-red-500/30
+          `}
+        >
+          <span className="flex-shrink-0">
+            <LogOut className="w-4 h-4" />
+          </span>
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="text-[10px] font-mono uppercase tracking-wider overflow-hidden whitespace-nowrap"
+              >
+                Logout
+              </motion.span>
+            )}
+          </AnimatePresence>
+
+          {!isExpanded && (
+            <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-800 border border-gray-700/50 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap">
+              <div className="text-[10px] font-semibold text-white">Logout</div>
+              <div className="text-[9px] text-gray-500 font-mono">End session</div>
+            </div>
+          )}
+        </button>
       </div>
 
       {/* Collapse/Expand Toggle */}
