@@ -19,6 +19,7 @@ function MapLoadingFallback() {
 
 interface LiveMapProps {
   flights: Flight[];
+  focusFlightId?: string | null;
   /** Replay state — when provided, the map switches between live/historical data. */
   replayMode?: ReplayMode;
   replayFlights?: Flight[];
@@ -34,6 +35,7 @@ interface LiveMapProps {
 
 export const LiveMap = memo(function LiveMap({
   flights,
+  focusFlightId = null,
   replayMode = 'LIVE',
   replayFlights = [],
   replayOffsetSeconds = 0,
@@ -52,7 +54,7 @@ export const LiveMap = memo(function LiveMap({
     <div className="w-full h-full rounded-xl overflow-hidden border border-gray-700/50 relative">
       {/* Map Layer */}
       <Suspense fallback={<MapLoadingFallback />}>
-        <FlightMap flights={displayFlights} isHistorical={isReplay} />
+        <FlightMap flights={displayFlights} isHistorical={isReplay} focusFlightId={focusFlightId} />
       </Suspense>
 
       {/* Replay Controller Overlay — sits at the bottom of the map */}

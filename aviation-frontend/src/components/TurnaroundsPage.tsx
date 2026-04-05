@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { TurnaroundApiResponse, DelayPrediction } from '../types/turnaround';
 import { API_BASE } from '../config';
+import { authFetch } from '../auth/authFetch';
 
 const POLL_INTERVAL = 5_000;
 
@@ -188,7 +189,7 @@ export function TurnaroundsPage() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/turnarounds`);
+  const res = await authFetch(`${API_BASE}/api/turnarounds`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: TurnaroundApiResponse[] = await res.json();
       if (mountedRef.current) {

@@ -5,6 +5,7 @@ import type {
   ApiTaskStatus,
 } from '../types/turnaround';
 import { API_BASE } from '../config';
+import { authFetch } from '../auth/authFetch';
 
 const POLL_INTERVAL = 5_000;
 
@@ -27,7 +28,7 @@ export function useTurnaroundAPI(flightId: string | null) {
   // ── Fetch turnaround for a single flight ───────────────────────
   const fetchTurnaround = useCallback(async (id: string) => {
     try {
-      const res = await fetch(`${API_BASE}/api/turnaround/${encodeURIComponent(id)}`);
+  const res = await authFetch(`${API_BASE}/api/turnaround/${encodeURIComponent(id)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json: TurnaroundApiResponse = await res.json();
       if (mountedRef.current) {
@@ -69,7 +70,7 @@ export function useTurnaroundAPI(flightId: string | null) {
 
       const body: TurnaroundUpdateRequest = { task_name: taskName, status };
       try {
-        const res = await fetch(
+        const res = await authFetch(
           `${API_BASE}/api/turnaround/${encodeURIComponent(flightId)}/update`,
           {
             method: 'POST',
@@ -95,7 +96,7 @@ export function useTurnaroundAPI(flightId: string | null) {
   // ── Fetch all turnarounds (utility) ───────────────────────────
   const fetchAll = useCallback(async (): Promise<TurnaroundApiResponse[]> => {
     try {
-      const res = await fetch(`${API_BASE}/api/turnarounds`);
+  const res = await authFetch(`${API_BASE}/api/turnarounds`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return (await res.json()) as TurnaroundApiResponse[];
     } catch {

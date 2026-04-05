@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { MetarResponse } from '../../types/flight';
 import { API_BASE } from '../../config';
+import { authFetch } from '../../auth/authFetch';
 
 interface MetarState {
   metar: MetarResponse | null;
@@ -18,7 +19,7 @@ const initialState: MetarState = {
 export const fetchMetar = createAsyncThunk(
   'metar/fetch',
   async (icao: string) => {
-    const res = await fetch(`${API_BASE}/api/metar/${icao}`);
+  const res = await authFetch(`${API_BASE}/api/metar/${icao}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as MetarResponse;
   },

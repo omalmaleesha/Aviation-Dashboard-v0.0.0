@@ -4,6 +4,7 @@ import { normalizeRawFlight } from '../types/flight';
 import { MOCK_FLIGHTS } from '../data/mockFlights';
 import { useInterval } from './useInterval';
 import { WS_FLIGHTS_URL, API_BASE } from '../config';
+import { authFetch } from '../auth/authFetch';
 import { useAppDispatch, useAppSelector } from '../store';
 import {
   setFlights,
@@ -54,7 +55,7 @@ export function useFlightData() {
   // ── REST fallback fetcher ───────────────────────────────────
   const fetchFlightsREST = useCallback(async () => {
     try {
-      const res = await fetch(REST_FLIGHTS_URL);
+  const res = await authFetch(REST_FLIGHTS_URL);
       if (!res.ok) return;
       const data = await res.json();
       if (!mountedRef.current) return;

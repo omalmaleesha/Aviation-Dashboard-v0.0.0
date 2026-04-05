@@ -5,6 +5,7 @@ Values are loaded from environment variables with sensible defaults.
 """
 
 import os
+import secrets
 
 from dotenv import load_dotenv
 
@@ -82,3 +83,20 @@ TURNAROUND_TASKS = {
     "catering":   {"duration_min": 18},
     "baggage":    {"duration_min": 25},
 }
+
+# ─── Authentication & Security ──────────────────────────────────────
+# NOTE: For production, always set JWT_SECRET_KEY via environment.
+_jwt_secret_env = os.getenv("JWT_SECRET_KEY", "")
+JWT_SECRET_KEY = _jwt_secret_env if _jwt_secret_env else secrets.token_urlsafe(64)
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+JWT_ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
+JWT_ISSUER = os.getenv("JWT_ISSUER", "skyops-sentinel")
+JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "skyops-api")
+
+# Password hardening policy
+AUTH_MIN_PASSWORD_LENGTH = int(os.getenv("AUTH_MIN_PASSWORD_LENGTH", "12"))
+
+# Development seed user (set ENABLE_TEST_USER=false in production)
+ENABLE_TEST_USER = os.getenv("ENABLE_TEST_USER", "true").lower() == "true"
+TEST_USER_EMAIL = os.getenv("TEST_USER_EMAIL", "test.user@skyops.com")
+TEST_USER_PASSWORD = os.getenv("TEST_USER_PASSWORD", "TestUser#2026!Secure")

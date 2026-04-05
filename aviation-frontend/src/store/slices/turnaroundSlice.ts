@@ -9,6 +9,7 @@ import type {
 } from '../../types/turnaround';
 import { TASK_DEFINITIONS, TURNAROUND_WINDOW_MIN } from '../../types/turnaround';
 import { API_BASE } from '../../config';
+import { authFetch } from '../../auth/authFetch';
 
 // ── Helpers: status mapping ──────────────────────────────────────
 const API_TO_LOCAL: Record<ApiTaskStatus, TaskStatus> = {
@@ -74,7 +75,7 @@ const initialState: TurnaroundSliceState = {
 export const fetchTurnaround = createAsyncThunk(
   'turnaround/fetch',
   async (flightId: string) => {
-    const res = await fetch(`${API_BASE}/api/turnaround/${encodeURIComponent(flightId)}`);
+    const res = await authFetch(`${API_BASE}/api/turnaround/${encodeURIComponent(flightId)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as TurnaroundApiResponse;
   },
@@ -83,7 +84,7 @@ export const fetchTurnaround = createAsyncThunk(
 export const postTaskUpdate = createAsyncThunk(
   'turnaround/postTask',
   async ({ flightId, taskName, status }: { flightId: string; taskName: string; status: ApiTaskStatus }) => {
-    const res = await fetch(
+    const res = await authFetch(
       `${API_BASE}/api/turnaround/${encodeURIComponent(flightId)}/update`,
       {
         method: 'POST',

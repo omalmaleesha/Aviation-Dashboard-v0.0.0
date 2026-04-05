@@ -3,6 +3,7 @@ import type { Flight } from '../../types/flight';
 import type { ReplayMode, ReplayKeyframe, ReplaySnapshotResponse, KeyframesResponse } from '../../types/replay';
 import { REPLAY_WINDOW_SEC, normalizeReplayFlight } from '../../types/replay';
 import { API_BASE } from '../../config';
+import { authFetch } from '../../auth/authFetch';
 
 const REPLAY_API = `${API_BASE}/api/replay`;
 
@@ -33,7 +34,7 @@ const initialState: ReplayState = {
 
 // ── Async thunks ─────────────────────────────────────────────────
 export const fetchKeyframes = createAsyncThunk('replay/fetchKeyframes', async () => {
-  const res = await fetch(REPLAY_API);
+  const res = await authFetch(REPLAY_API);
   if (!res.ok) throw new Error(`Keyframes API HTTP ${res.status}`);
   const data: KeyframesResponse = await res.json();
   return data.keyframes ?? [];
@@ -43,7 +44,7 @@ export const fetchSnapshot = createAsyncThunk(
   'replay/fetchSnapshot',
   async (timestamp: string) => {
     const url = `${REPLAY_API}?timestamp=${encodeURIComponent(timestamp)}`;
-    const res = await fetch(url);
+  const res = await authFetch(url);
     if (!res.ok) throw new Error(`Replay API HTTP ${res.status}`);
     return (await res.json()) as ReplaySnapshotResponse;
   },

@@ -29,6 +29,7 @@ export interface RawFlightData {
   /** Backend may send `flightId` or `id` — normalizer handles both. */
   flightId?: string;
   id?: string;
+  aircraft_type?: string | null;
   origin?: string | null;
   destination?: string | null;
   status: string;             // e.g. "EN_ROUTE", "DESCENDING"
@@ -76,14 +77,25 @@ const STATUS_MAP: Record<string, FlightStatus> = {
   'LANDING':    'LANDING',
 };
 
+function normalizeAirportLabel(value?: string | null): string {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : '—';
+}
+
+function normalizeAircraftType(value?: string | null): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
 /** Convert a raw API flight object into the normalised internal Flight type. */
 export function normalizeRawFlight(raw: RawFlightData): Flight {
   const resolvedId = raw.flightId ?? raw.id ?? 'UNKNOWN';
   return {
     flightId:    resolvedId,
     callsign:    resolvedId,
-    origin:      raw.origin ?? '—',
-    destination:  raw.destination ?? '—',
+    aircraftType: normalizeAircraftType(raw.aircraft_type),
+    origin:      normalizeAirportLabel(raw.origin),
+    destination: normalizeAirportLabel(raw.destination),
     latitude:    raw.lat,
     longitude:   raw.lng,
     altitude:    raw.altitude ?? 0,
@@ -147,4 +159,63 @@ export interface PaginatedAnalyticsResponse {
   total: number;
   limit: number;
   offset: number;
+}
+
+// ── Flight Route endpoint: GET /api/flights/{flight_id}/route ───────────────
+export interface RoutePoint {
+  lat: number;
+  lng: number;
+  timestamp: string;
+}
+
+export type RouteSource = 'DESTINATION_AIRPORT' | 'HEADING_PROJECTION' | 'HISTORY_ONLY';
+
+export interface FlightRouteResponse {
+  flight_id: string;
+  points: RoutePoint[];
+  projected_points?: RoutePoint[];
+  full_route_points?: RoutePoint[];
+  start_point?: RoutePoint | null;
+  current_point?: RoutePoint | null;
+  end_point?: RoutePoint | null;
+  origin_icao?: string | null;
+  destination_icao?: string | null;
+  route_source?: RouteSource;
+  point_count: number;
+  start_timestamp: string;
+  end_timestamp: string;
+  sampled_from_keyframes: number;
+}
+
+// ── Aircraft Type Details endpoints ─────────────────────────────────
+export interface AircraftImageSet {
+  exteriorImage: string;
+  interiorImage: string;
+  sideViewImage: string;
+  cockpitImage: string;
+}
+
+export interface AircraftTypeDetail {
+  typeId: string;
+  modelName: string;
+  manufacturer: string;
+  category: string;
+  length: number | string;
+  wingspan: number | string;
+  height: number | string;
+  maxTakeoffWeight: number | string;
+  passengerCapacity: number | string;
+  crewCapacity: number | string;
+  cargoCapacity: number | string;
+  maxSpeed: number | string;
+  cruiseSpeed: number | string;
+  range: number | string;
+  fuelCapacity: number | string;
+  engineType: string;
+  numberOfEngines: number | string;
+  fuelType: string;
+  maintenanceInterval: number | string;
+  requiredRunwayLength: number | string;
+  serviceCeiling: number | string;
+  images: AircraftImageSet;
 }

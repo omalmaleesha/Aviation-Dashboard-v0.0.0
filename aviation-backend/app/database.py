@@ -22,10 +22,43 @@ class Base(DeclarativeBase):
     pass
 
 
+def _ensure_users_profile_columns(sync_conn) -> None:
+    """Best-effort backfill for users table columns on existing SQLite DBs."""
+    result = sync_conn.exec_driver_sql("PRAGMA table_info(users)")
+    existing_columns = {row[1] for row in result.fetchall()}
+
+    statements: list[str] = []
+    if "full_name" not in existing_columns:
+        statements.append(
+            "ALTER TABLE users ADD COLUMN full_name VARCHAR(120) NOT NULL DEFAULT 'Aviation Operator'"
+        )
+    if "role" not in existing_columns:
+        statements.append(
+            "ALTER TABLE users ADD COLUMN role VARCHAR(100) NOT NULL DEFAULT 'Operations Controller'"
+        )
+    if "timezone" not in existing_columns:
+        statements.append(
+            "ALTER TABLE users ADD COLUMN timezone VARCHAR(64) NOT NULL DEFAULT 'UTC'"
+        )
+    if "contact_number" not in existing_columns:
+        statements.append("ALTER TABLE users ADD COLUMN contact_number VARCHAR(25)")
+
+    for stmt in statements:
+        sync_conn.exec_driver_sql(stmt)
+
+
 async def init_db() -> None:
     """Create all tables (idempotent — safe to call on every startup)."""
+    # Ensure all ORM models are imported before metadata.create_all()
+    # so SQLAlchemy knows every table definition.
+    from app.models import auth_orm as _auth_orm  # noqa: F401
+    from app.models import comms_orm as _comms_orm  # noqa: F401
+    from app.models import settings_orm as _settings_orm  # noqa: F401
+    from app.models import turnaround_orm as _turnaround_orm  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(_ensure_users_profile_columns)
 
 
 async def get_session() -> AsyncSession:  # type: ignore[misc]

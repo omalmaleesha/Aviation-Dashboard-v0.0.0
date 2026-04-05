@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { FuelAnalyticsSummary } from '../types/flight';
 import { API_BASE } from '../config';
+import { authFetch } from '../auth/authFetch';
 
 const SUMMARY_POLL_MS = 60_000; // lightweight — every 60 s
 
@@ -17,7 +18,7 @@ export function useFuelSummary() {
 
   const fetchSummary = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/analytics/summary`);
+  const res = await authFetch(`${API_BASE}/api/analytics/summary`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data: FuelAnalyticsSummary = await res.json();
       if (mountedRef.current) {

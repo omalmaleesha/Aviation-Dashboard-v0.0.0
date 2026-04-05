@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Flight, RawFlightData } from '../types/flight';
 import { normalizeRawFlight } from '../types/flight';
 import { API_BASE } from '../config';
+import { authFetch } from '../auth/authFetch';
 
 const API_URL = `${API_BASE}/api/flights`;
 const POLL_INTERVAL = 5000; // refresh every 5 seconds
@@ -15,7 +16,7 @@ export function useFlightAPI() {
 
   const fetchFlights = useCallback(async () => {
     try {
-      const res = await fetch(API_URL);
+  const res = await authFetch(API_URL);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 

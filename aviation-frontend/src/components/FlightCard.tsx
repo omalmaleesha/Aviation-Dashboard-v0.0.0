@@ -13,7 +13,7 @@ interface FlightCardProps {
 }
 
 export const FlightCard = memo(function FlightCard({ flight, onSelectTurnaround, analyticsData }: FlightCardProps) {
-  const { flightId, origin, destination, status, progress, altitude, speed, heading } = flight;
+  const { flightId, origin, destination, status, progress, altitude, speed, heading, aircraftType } = flight;
   const style = STATUS_STYLES[status];
 
   return (
@@ -34,6 +34,9 @@ export const FlightCard = memo(function FlightCard({ flight, onSelectTurnaround,
           <div>
             <div className="font-mono font-bold text-white text-base leading-tight">{flightId}</div>
             <div className="text-[11px] text-gray-500 font-mono">{origin} → {destination}</div>
+            <div className="text-[10px] text-violet-400 font-mono uppercase tracking-wider">
+              Type: {aircraftType ?? 'UNKNOWN'}
+            </div>
           </div>
         </div>
         <span
