@@ -169,7 +169,6 @@ export function Sidebar({ activeView, onViewChange, onLogout }: SidebarProps) {
         {/* Decorative items (non-functional) */}
         {[
           { icon: <BarChart3 className="w-4 h-4" />, label: 'Analytics' },
-          { icon: <Radio className="w-4 h-4" />, label: 'Comms' },
         ].map((item) => (
           <div
             key={item.label}
@@ -194,6 +193,51 @@ export function Sidebar({ activeView, onViewChange, onLogout }: SidebarProps) {
             </AnimatePresence>
           </div>
         ))}
+
+        <button
+          onClick={() => onViewChange('comms')}
+          title={!isExpanded ? 'Comms' : undefined}
+          className={`
+            w-full flex items-center gap-3 rounded-lg transition-all duration-200 group relative
+            ${isExpanded ? 'px-3 py-2.5 mt-2' : 'px-0 py-2.5 mt-2 justify-center'}
+            ${
+              activeView === 'comms'
+                ? 'bg-aviation-blue/15 text-aviation-blue border border-aviation-blue/25'
+                : 'text-gray-400 hover:text-gray-200 hover:bg-slate-800/50 border border-transparent'
+            }
+          `}
+        >
+          {activeView === 'comms' && (
+            <motion.div
+              layoutId="sidebar-active"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-aviation-blue rounded-r-full"
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            />
+          )}
+
+          <span className="flex-shrink-0">
+            <Radio className="w-4 h-4" />
+          </span>
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: 'auto' }}
+                exit={{ opacity: 0, width: 0 }}
+                className="text-[10px] font-mono uppercase tracking-wider overflow-hidden whitespace-nowrap"
+              >
+                Comms
+              </motion.span>
+            )}
+          </AnimatePresence>
+
+          {!isExpanded && (
+            <div className="absolute left-full ml-2 px-2.5 py-1.5 bg-slate-800 border border-gray-700/50 rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap">
+              <div className="text-[10px] font-semibold text-white">Comms</div>
+              <div className="text-[9px] text-gray-500 font-mono">ATC & ground feed</div>
+            </div>
+          )}
+        </button>
 
         <button
           onClick={() => onViewChange('settings')}

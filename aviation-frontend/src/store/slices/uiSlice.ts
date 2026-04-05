@@ -6,6 +6,7 @@ export type SidebarView =
   | 'flights-table'
   | 'flighttype-explorer'
   | 'alerts'
+  | 'comms'
   | 'turnarounds'
   | 'fuel-analytics'
   | 'settings'

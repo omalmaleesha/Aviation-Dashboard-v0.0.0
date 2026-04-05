@@ -11,6 +11,7 @@ import { AlertToast } from './components/AlertToast';
 import { TurnaroundDashboard } from './components/TurnaroundDashboard';
 import { TurnaroundsPage } from './components/TurnaroundsPage';
 import { FuelAnalyticsPage } from './components/FuelAnalyticsPage';
+import { CommsPage } from './components/CommsPage';
 import { SettingsPage } from './components/SettingsPage';
 import { AircraftDetailsPage } from './components/AircraftDetailsPage';
 import { FlightTypeExplorerPage } from './components/FlightTypeExplorerPage';
@@ -272,6 +273,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 {...viewTransition}
               >
                 <FuelAnalyticsPage />
+              </motion.div>
+            ) : activeView === 'comms' ? (
+              <motion.div
+                key="comms-view"
+                className="absolute inset-0 overflow-hidden"
+                {...viewTransition}
+              >
+                <CommsPage />
               </motion.div>
             ) : activeView === 'settings' ? (
               <motion.div
