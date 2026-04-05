@@ -127,6 +127,15 @@ Interactive docs at **http://localhost:8000/docs**.
 | `FUEL_COST_PER_KG` | `1.10` | Jet fuel cost in USD per kg |
 | `CO2_PER_KG_FUEL` | `3.16` | kg CO₂ emitted per kg of fuel burned |
 | `FUEL_ANALYTICS_INTERVAL` | `60` | Seconds between fuel analytics updates |
+| `JWT_SECRET_KEY` | auto-generated (dev fallback) | JWT signing secret (set explicitly in production) |
+| `JWT_ALGORITHM` | `HS256` | JWT signing algorithm |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Access token TTL in minutes |
+| `JWT_ISSUER` | `skyops-sentinel` | Expected JWT issuer claim |
+| `JWT_AUDIENCE` | `skyops-api` | Expected JWT audience claim |
+| `AUTH_MIN_PASSWORD_LENGTH` | `12` | Minimum password length for registration |
+| `ENABLE_TEST_USER` | `true` | Seeds a development test user at startup |
+| `TEST_USER_EMAIL` | `test.user@skyops.com` | Seeded development user email |
+| `TEST_USER_PASSWORD` | `TestUser#2026!Secure` | Seeded development user password |
 
 ---
 
@@ -146,6 +155,14 @@ Interactive docs at **http://localhost:8000/docs**.
 | `GET` | `/api/analytics/summary` | Aggregated fuel/cost/CO₂ metrics |
 | `GET` | `/api/analytics/{flight_id}` | Per-flight fuel analytics |
 | `GET` | `/api/analytics` | Paginated list of all flight analytics |
+| `POST` | `/api/auth/register` | Create a user and return a JWT access token |
+| `POST` | `/api/auth/login` | Authenticate with email/password and return JWT token |
+| `GET` | `/api/auth/me` | Return current authenticated user profile |
+| `GET` | `/api/users/me` | Get editable profile details for logged-in user |
+| `PATCH` | `/api/users/me` | Update profile fields (`full_name`, `role`, `timezone`, `contact_number`) |
+| `GET` | `/api/settings/me` | Get app/system preference settings for logged-in user |
+| `PATCH` | `/api/settings/me` | Partially update app/system preferences |
+| `POST` | `/api/settings/me/reset` | Reset settings to backend defaults |
 
 ### WebSocket
 
@@ -163,6 +180,18 @@ Interactive docs at **http://localhost:8000/docs**.
 - **Fuel Analytics** — Physics-based fuel burn estimation using altitude/velocity factors, with real-time cost and CO₂ tracking per flight.
 - **Synthetic Fallback** — Generates 800–1000 realistic flight objects when the OpenSky API is unreachable, so the frontend is never empty.
 - **Chunked WebSocket** — Splits large flight payloads into 100-flight chunks to prevent network congestion.
+- **JWT Authentication** — Secure register/login flow with hashed passwords, token expiry, issuer/audience validation, and protected profile endpoint.
+
+---
+
+## 🔐 Authentication Quick Check
+
+On startup, the backend creates a dev test account (unless `ENABLE_TEST_USER=false`):
+
+- **Email:** `test.user@skyops.com`
+- **Password:** `TestUser#2026!Secure`
+
+Use `/api/auth/login` to get a bearer token, then call `/api/auth/me` with `Authorization: Bearer <token>`.
 
 ---
 
