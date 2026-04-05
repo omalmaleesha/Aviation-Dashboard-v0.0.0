@@ -163,6 +163,10 @@ Interactive docs at **http://localhost:8000/docs**.
 | `GET` | `/api/settings/me` | Get app/system preference settings for logged-in user |
 | `PATCH` | `/api/settings/me` | Partially update app/system preferences |
 | `POST` | `/api/settings/me/reset` | Reset settings to backend defaults |
+| `GET` | `/api/comms/overview` | Comms dashboard payload (channels, recent messages, unread count, incidents) |
+| `POST` | `/api/comms/messages/{message_id}/ack` | Acknowledge a comms message (idempotent) |
+| `GET` | `/api/comms/messages` | Filtered/paginated comms message history |
+| `GET` | `/api/comms/channels` | Channel health/status list |
 
 ### WebSocket
 
@@ -170,6 +174,7 @@ Interactive docs at **http://localhost:8000/docs**.
 |----------|-------------|
 | `ws://localhost:8000/ws/flights` | Real-time chunked flight data stream |
 | `ws://localhost:8000/ws/alerts` | Real-time geofence alert stream |
+| `ws://localhost:8000/ws/comms` | Real-time comms events (`channel_health_update`, `message_created`, `message_acknowledged`, `incident_update`) |
 
 ---
 
