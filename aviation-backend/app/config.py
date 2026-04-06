@@ -100,3 +100,8 @@ AUTH_MIN_PASSWORD_LENGTH = int(os.getenv("AUTH_MIN_PASSWORD_LENGTH", "12"))
 ENABLE_TEST_USER = os.getenv("ENABLE_TEST_USER", "true").lower() == "true"
 TEST_USER_EMAIL = os.getenv("TEST_USER_EMAIL", "test.user@skyops.com")
 TEST_USER_PASSWORD = os.getenv("TEST_USER_PASSWORD", "TestUser#2026!Secure")
+
+# Development admin seed user (set ENABLE_ADMIN_TEST_USER=false in production)
+ENABLE_ADMIN_TEST_USER = os.getenv("ENABLE_ADMIN_TEST_USER", "true").lower() == "true"
+ADMIN_TEST_EMAIL = os.getenv("ADMIN_TEST_EMAIL", "admin.test@skyops.com")
+ADMIN_TEST_PASSWORD = os.getenv("ADMIN_TEST_PASSWORD", "Admin#2026!Secure")
