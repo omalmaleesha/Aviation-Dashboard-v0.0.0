@@ -24,9 +24,12 @@ class UserPublic(BaseModel):
 
     id: int
     email: EmailStr
+    role: str
+    is_admin: bool
     is_active: bool
     is_test_user: bool
     created_at: datetime
+    last_login_at: datetime | None = None
 
 
 class TokenResponse(BaseModel):
