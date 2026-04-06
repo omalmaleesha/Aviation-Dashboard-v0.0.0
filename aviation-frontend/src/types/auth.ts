@@ -6,6 +6,8 @@ export interface AuthRequest {
 export interface AuthUser {
   id: number;
   email: string;
+  role?: string | null;
+  is_admin?: boolean;
   is_active: boolean;
   is_test_user: boolean;
   created_at: string;
