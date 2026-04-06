@@ -23,6 +23,7 @@ class User(Base):
     role = Column(String(100), nullable=False, default="Operations Controller")
     timezone = Column(String(64), nullable=False, default="UTC")
     contact_number = Column(String(25), nullable=True)
+    is_admin = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     is_test_user = Column(Boolean, default=False, nullable=False)
     created_at = Column(
@@ -30,6 +31,7 @@ class User(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
+    last_login_at = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
