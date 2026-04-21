@@ -49,7 +49,7 @@ def _parse_since(value: str | None) -> datetime | None:
 async def comms_overview(
     limit: int = Query(default=30, ge=1, le=100),
     channel_ids: str | None = Query(default=None),
-    user=Depends(get_current_user),
+    _user=Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     parsed_channel_ids = _parse_channel_ids(channel_ids)
@@ -90,7 +90,7 @@ async def comms_messages(
     channel_id: str | None = Query(default=None),
     acknowledged: bool | None = Query(default=None),
     since: str | None = Query(default=None),
-    user=Depends(get_current_user),
+    _user=Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     since_dt = _parse_since(since)
@@ -108,7 +108,7 @@ async def comms_messages(
 
 @router.get("/channels", response_model=CommsChannelListResponse)
 async def comms_channels(
-    user=Depends(get_current_user),
+    _user=Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     items = await get_channels(session)

@@ -24,9 +24,15 @@ _DEFAULT_CHANNELS: tuple[dict, ...] = (
     {"channel_id": "emergency", "label": "Emergency", "frequency_mhz": 121.5},
 )
 
+_HIGH_PRIORITIES = [CommsPriority.HIGH.value, CommsPriority.CRITICAL.value]
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+async def _count(session: AsyncSession, stmt) -> int:
+    return int((await session.scalar(stmt)) or 0)
 
 
 def _priority_from_alert_severity(severity: str) -> str:
@@ -83,16 +89,17 @@ async def sync_free_data(session: AsyncSession) -> None:
 
     channels = (await session.execute(select(CommsChannel))).scalars().all()
     for ch in channels:
-        incidents_count = await session.scalar(
+        incidents_count = await _count(
+            session,
             select(func.count())
             .select_from(CommsMessage)
             .where(
                 CommsMessage.channel_id == ch.channel_id,
-                CommsMessage.acknowledged == False,  # noqa: E712
-                CommsMessage.priority.in_([CommsPriority.HIGH.value, CommsPriority.CRITICAL.value]),
+                CommsMessage.acknowledged.is_(False),
+                CommsMessage.priority.in_(_HIGH_PRIORITIES),
             )
         )
-        ch.active_incidents = int(incidents_count or 0)
+        ch.active_incidents = incidents_count
     await session.commit()
 
 
@@ -135,7 +142,7 @@ async def get_messages(
 
     items_stmt = base_stmt.order_by(CommsMessage.created_at.desc()).offset(offset).limit(limit)
     items = list((await session.execute(items_stmt)).scalars().all())
-    total = int((await session.scalar(count_stmt)) or 0)
+    total = await _count(session, count_stmt)
     return items, total
 
 
@@ -154,8 +161,8 @@ async def get_overview(
 
     stmt = select(CommsMessage)
     unread_stmt = select(func.count()).select_from(CommsMessage).where(
-        CommsMessage.requires_ack == True,  # noqa: E712
-        CommsMessage.acknowledged == False,  # noqa: E712
+        CommsMessage.requires_ack.is_(True),
+        CommsMessage.acknowledged.is_(False),
     )
     for f in filters:
         stmt = stmt.where(f)
@@ -163,7 +170,7 @@ async def get_overview(
 
     stmt = stmt.order_by(CommsMessage.created_at.desc()).limit(limit)
     messages = list((await session.execute(stmt)).scalars().all())
-    unread_count = int((await session.scalar(unread_stmt)) or 0)
+    unread_count = await _count(session, unread_stmt)
     active_incidents = sum(c.active_incidents for c in channels)
     return channels, messages, unread_count, active_incidents
 

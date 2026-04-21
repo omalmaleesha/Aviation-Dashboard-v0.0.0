@@ -37,7 +37,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 @router.get("/overview", response_model=AdminOverviewResponse)
 async def admin_overview(
-    user=Depends(get_current_admin_user),
+    _admin_user=Depends(get_current_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     return await get_admin_overview(session)
@@ -47,7 +47,7 @@ async def admin_overview(
 async def admin_users(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    user=Depends(get_current_admin_user),
+    _admin_user=Depends(get_current_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     return await list_admin_users(session, limit=limit, offset=offset)
@@ -85,9 +85,12 @@ async def admin_update_user_active(
 
 @router.get("/incidents", response_model=AdminIncidentsListResponse)
 async def admin_incidents(
-    status: str | None = Query(default=None, description="Comma-separated statuses: open,investigating,resolved"),
+    status: str | None = Query(
+        default=None,
+        description="Comma-separated statuses: open,investigating,resolved",
+    ),
     limit: int = Query(default=20, ge=1, le=200),
-    user=Depends(get_current_admin_user),
+    _admin_user=Depends(get_current_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     statuses = [s.strip() for s in status.split(",")] if status else None
@@ -111,7 +114,7 @@ async def admin_resolve_incident(
 async def admin_audit_logs(
     limit: int = Query(default=30, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    user=Depends(get_current_admin_user),
+    _admin_user=Depends(get_current_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     return await list_admin_audit_logs(session, limit=limit, offset=offset)
@@ -119,7 +122,7 @@ async def admin_audit_logs(
 
 @router.get("/system/metrics", response_model=AdminSystemMetricsResponse)
 async def admin_system_metrics(
-    user=Depends(get_current_admin_user),
+    _admin_user=Depends(get_current_admin_user),
     session: AsyncSession = Depends(get_session),
 ):
     return await get_admin_system_metrics(session)

@@ -17,6 +17,14 @@ from app.models.auth_orm import User
 from app.models.comms_orm import CommsMessage
 
 
+INCIDENT_STATUSES = {"OPEN", "INVESTIGATING", "RESOLVED"}
+HIGH_PRIORITIES = {"HIGH", "CRITICAL"}
+
+
+def _new_id(prefix: str, length: int = 8) -> str:
+    return f"{prefix}-{uuid.uuid4().hex[:length].upper()}"
+
+
 def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
@@ -46,13 +54,24 @@ async def _append_audit_log(
     metadata: dict[str, Any],
 ) -> None:
     audit = AdminAuditLog(
-        id=f"AUD-{uuid.uuid4().hex[:8].upper()}",
+        id=_new_id("AUD"),
         actor_email=actor_email,
         action=action,
         target=target,
         metadata_payload=metadata,
     )
     session.add(audit)
+
+
+async def _count(session: AsyncSession, stmt) -> int:
+    return int((await session.scalar(stmt)) or 0)
+
+
+def _normalize_statuses(statuses: list[str] | None) -> list[str]:
+    if not statuses:
+        return []
+    normalized = [status.strip().upper() for status in statuses if status and status.strip()]
+    return [status for status in normalized if status in INCIDENT_STATUSES]
 
 
 async def _sync_incidents_from_comms(session: AsyncSession) -> None:
@@ -71,7 +90,7 @@ async def _sync_incidents_from_comms(session: AsyncSession) -> None:
         existing = await session.scalar(select(AdminIncident).where(AdminIncident.source_message_id == row.id))
         if existing is None:
             existing = AdminIncident(
-                id=f"INC-{uuid.uuid4().hex[:4].upper()}",
+                id=_new_id("INC", length=4),
                 source_message_id=row.id,
                 title=(row.message or "Operational incident")[:200],
                 severity=(row.priority or "MEDIUM").upper(),
@@ -92,40 +111,28 @@ async def _sync_incidents_from_comms(session: AsyncSession) -> None:
 
 
 async def get_admin_overview(session: AsyncSession) -> dict:
-    total_users = int((await session.scalar(select(func.count(User.id)))) or 0)
+    total_users = await _count(session, select(func.count(User.id)))
 
-    active_since = datetime.now(timezone.utc) - timedelta(hours=1)
-    active_sessions = int(
-        (
-            await session.scalar(
-                select(func.count(User.id)).where(User.last_login_at.is_not(None), User.last_login_at >= active_since)
-            )
-        )
-        or 0
+    active_since = _utc_now() - timedelta(hours=1)
+    active_sessions = await _count(
+        session,
+        select(func.count(User.id)).where(User.last_login_at.is_not(None), User.last_login_at >= active_since),
     )
 
-    unresolved_alerts = int(
-        (
-            await session.scalar(
-                select(func.count(CommsMessage.id)).where(
-                    CommsMessage.requires_ack == True,  # noqa: E712
-                    CommsMessage.acknowledged == False,  # noqa: E712
-                )
-            )
-        )
-        or 0
+    unresolved_alerts = await _count(
+        session,
+        select(func.count(CommsMessage.id)).where(
+            CommsMessage.requires_ack.is_(True),
+            CommsMessage.acknowledged.is_(False),
+        ),
     )
 
-    open_incidents = int(
-        (
-            await session.scalar(
-                select(func.count(CommsMessage.id)).where(
-                    CommsMessage.acknowledged == False,  # noqa: E712
-                    CommsMessage.priority.in_(["HIGH", "CRITICAL"]),
-                )
-            )
-        )
-        or 0
+    open_incidents = await _count(
+        session,
+        select(func.count(CommsMessage.id)).where(
+            CommsMessage.acknowledged.is_(False),
+            CommsMessage.priority.in_(sorted(HIGH_PRIORITIES)),
+        ),
     )
 
     # Simple health score heuristic from unresolved workload.
@@ -144,7 +151,7 @@ async def get_admin_overview(session: AsyncSession) -> dict:
 
 
 async def list_admin_users(session: AsyncSession, *, limit: int, offset: int) -> dict:
-    total = int((await session.scalar(select(func.count(User.id)))) or 0)
+    total = await _count(session, select(func.count(User.id)))
 
     rows = (
         (
@@ -270,7 +277,7 @@ async def list_admin_incidents(
 ) -> dict:
     await _sync_incidents_from_comms(session)
 
-    normalized = [s.strip().upper() for s in (statuses or []) if s.strip()]
+    normalized = _normalize_statuses(statuses)
     stmt = select(AdminIncident)
     if normalized:
         stmt = stmt.where(AdminIncident.status.in_(normalized))
@@ -333,7 +340,7 @@ async def resolve_admin_incident(
 
 
 async def list_admin_audit_logs(session: AsyncSession, *, limit: int, offset: int) -> dict:
-    total = int((await session.scalar(select(func.count(AdminAuditLog.id)))) or 0)
+    total = await _count(session, select(func.count(AdminAuditLog.id)))
     rows = (
         (
             await session.execute(
@@ -362,25 +369,17 @@ async def list_admin_audit_logs(session: AsyncSession, *, limit: int, offset: in
 
 
 async def get_admin_system_metrics(session: AsyncSession) -> dict:
-    unresolved = int(
-        (
-            await session.scalar(
-                select(func.count(CommsMessage.id)).where(
-                    CommsMessage.requires_ack == True,  # noqa: E712
-                    CommsMessage.acknowledged == False,  # noqa: E712
-                )
-            )
-        )
-        or 0
+    unresolved = await _count(
+        session,
+        select(func.count(CommsMessage.id)).where(
+            CommsMessage.requires_ack.is_(True),
+            CommsMessage.acknowledged.is_(False),
+        ),
     )
-    total_messages = int((await session.scalar(select(func.count(CommsMessage.id)))) or 0)
-    active_sessions = int(
-        (
-            await session.scalar(
-                select(func.count(User.id)).where(User.last_login_at.is_not(None), User.last_login_at >= _utc_now() - timedelta(hours=1))
-            )
-        )
-        or 0
+    total_messages = await _count(session, select(func.count(CommsMessage.id)))
+    active_sessions = await _count(
+        session,
+        select(func.count(User.id)).where(User.last_login_at.is_not(None), User.last_login_at >= _utc_now() - timedelta(hours=1)),
     )
 
     latency_ms = float(110 + min(240, unresolved * 6))
