@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.comms_orm import CommsChannel, CommsMessage
 from app.models.comms_schemas import CommsHealth, CommsPriority
+from app.services.audit import add_audit_event
 from app.services.alerts import get_alert_history
 from app.services.opensky import is_connected
 
@@ -187,6 +188,7 @@ async def acknowledge_message(
     if message is None:
         raise HTTPException(status_code=404, detail=f"Comms message '{message_id}' not found")
 
+    was_acknowledged = bool(message.acknowledged)
     if not message.acknowledged:
         message.acknowledged = True
         message.acknowledged_at = _now()
@@ -194,6 +196,37 @@ async def acknowledge_message(
 
     if note is not None:
         message.note = note.strip()[:255]
+
+    await add_audit_event(
+        session,
+        category="COMMS",
+        action="COMMS_MESSAGE_ACKNOWLEDGED",
+        actor_user_id=user_id,
+        resource_type="comms_message",
+        resource_id=message.id,
+        details={
+            "channel_id": message.channel_id,
+            "already_acknowledged": was_acknowledged,
+            "requires_ack": message.requires_ack,
+            "priority": message.priority,
+            "note": message.note,
+        },
+    )
+
+    if message.id.startswith("alert_"):
+        await add_audit_event(
+            session,
+            category="INCIDENT",
+            action="ALERT_ACKNOWLEDGED",
+            actor_user_id=user_id,
+            resource_type="alert",
+            resource_id=message.id.replace("alert_", "", 1),
+            details={
+                "comms_message_id": message.id,
+                "channel_id": message.channel_id,
+                "priority": message.priority,
+            },
+        )
 
     await session.commit()
     await session.refresh(message)

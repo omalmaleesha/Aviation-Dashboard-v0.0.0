@@ -187,6 +187,8 @@ Interactive docs at **http://localhost:8000/docs**.
 | `GET` | `/api/comms/messages` | Filtered/paginated comms message history |
 | `GET` | `/api/comms/channels` | Channel health/status list |
 | `GET` | `/api/weather/windy` | Generate Windy embed URL dynamically (supports `lat/lon` or `flightId`) |
+| `GET` | `/api/audit/timeline` | Incident timeline + audit log with filters/pagination |
+
 
 ### WebSocket
 
