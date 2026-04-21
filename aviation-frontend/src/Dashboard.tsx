@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Radar } from 'lucide-react';
 import { NavigationHeader } from './components/NavigationHeader';
 import { LiveMap } from './components/LiveMap';
 import { FlightIntelligence } from './components/FlightIntelligence';
@@ -44,6 +45,8 @@ const viewTransition = {
   transition: { duration: 0.2, ease: 'easeInOut' as const },
 };
 
+const DASHBOARD_BG_IMAGE_STACK = "url('/image.jpeg'), url('/image%20(2).jpeg'), url('/image%20(3).jpeg')";
+
 interface DashboardProps {
   onLogout: () => void;
 }
@@ -52,6 +55,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const dispatch = useAppDispatch();
   const [focusFlightId, setFocusFlightId] = useState<string | null>(null);
   const [activeTheme, setActiveTheme] = useState<string>(getInitialCockpitTheme);
+  const [isFlightIntelCollapsed, setIsFlightIntelCollapsed] = useState(false);
 
   // ── Redux-backed state (read from store) ────────────────────
   const activeView = useAppSelector((s) => s.ui.activeView);
@@ -164,7 +168,21 @@ export function Dashboard({ onLogout }: DashboardProps) {
   }, [activeTheme]);
 
   return (
-  <div id="cockpit-capture" className="cockpit-shell flex flex-col h-screen w-screen bg-slate-950 text-white overflow-hidden">
+  <div id="cockpit-capture" className="cockpit-shell relative isolate flex flex-col h-screen w-screen bg-slate-950 text-white overflow-hidden">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: DASHBOARD_BG_IMAGE_STACK,
+          backgroundSize: 'cover, 34% auto, 36% auto',
+          backgroundPosition: 'center center, left bottom, right top',
+          backgroundRepeat: 'no-repeat, no-repeat, no-repeat',
+          opacity: 0.34,
+        }}
+      />
+      <div className="absolute inset-0 pointer-events-none bg-slate-950/55" />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,_rgba(56,189,248,0.14),_transparent_42%),radial-gradient(circle_at_bottom_left,_rgba(16,185,129,0.10),_transparent_45%)]" />
+
+      <div className="relative z-10 flex flex-col h-full">
       {/* Real-time alert toast */}
       <AlertToast alert={latestAlert} onDismiss={dismissLatest} />
 
@@ -190,6 +208,34 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 className="absolute inset-0 flex overflow-hidden"
                 {...viewTransition}
               >
+                <button
+                  type="button"
+                  onClick={() => setIsFlightIntelCollapsed((prev) => !prev)}
+                  title={isFlightIntelCollapsed ? 'Expand Flight Intelligence' : 'Collapse Flight Intelligence'}
+                  className="absolute top-1/2 -translate-y-1/2 z-[1300] w-6 h-6 flex items-center justify-center bg-slate-800 border border-gray-700/50 rounded-full text-gray-300 hover:text-white hover:bg-slate-700 transition-colors shadow-lg"
+                  style={{ right: isFlightIntelCollapsed ? 6 : 374 }}
+                >
+                  {isFlightIntelCollapsed ? (
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  )}
+                </button>
+
+                {isFlightIntelCollapsed && (
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 z-[1250] right-2 inline-flex items-center gap-1.5 rounded-full border border-cyan-400/35 bg-slate-900/85 px-2 py-1 text-[10px] font-mono text-cyan-200 shadow-lg"
+                    title="Flight Intelligence panel is collapsed"
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-300 opacity-70 animate-ping" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-300" />
+                    </span>
+                    <Radar className="w-3 h-3" />
+                    <span className="uppercase tracking-wider">Intelligence</span>
+                  </div>
+                )}
+
                 {/* Map */}
                 <div className="flex-1 p-4 bg-slate-900/10">
                   <LiveMap
@@ -209,13 +255,20 @@ export function Dashboard({ onLogout }: DashboardProps) {
                 </div>
 
                 {/* Right Sidebar — Flight Intelligence */}
-                <div className="w-[380px] border-l border-gray-800/50">
+                <motion.div
+                  animate={{
+                    width: isFlightIntelCollapsed ? 0 : 380,
+                    opacity: isFlightIntelCollapsed ? 0 : 1,
+                  }}
+                  transition={{ duration: 0.25, ease: 'easeInOut' }}
+                  className="h-full border-l border-gray-800/50 overflow-hidden"
+                >
                   <FlightIntelligence
                     flights={flights}
                     connectionStatus={connectionStatus}
                     onSelectTurnaround={handleSelectTurnaround}
                   />
-                </div>
+                </motion.div>
               </motion.div>
             ) : activeView === 'flights-table' ? (
               <motion.div
@@ -318,6 +371,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
         onCycleTask={cycleTaskStatus}
         onClose={handleCloseTurnaround}
       />
+      </div>
     </div>
   );
 }

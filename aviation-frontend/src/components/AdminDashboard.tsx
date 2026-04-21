@@ -31,6 +31,8 @@ const ADMIN_VIEWS: Array<{ id: AdminView; label: string; icon: React.ReactNode; 
   { id: 'system', label: 'System Health', icon: <Activity className="w-4 h-4" />, description: 'Reliability' },
 ];
 
+const ADMIN_DASHBOARD_BG_IMAGE_STACK = "url('/image%20(3).jpeg'), url('/image.jpeg'), url('/image%20(2).jpeg')";
+
 function metricClasses(metric: AdminSystemMetric): string {
   if (metric.status === 'GOOD') return 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10';
   if (metric.status === 'WARN') return 'text-amber-300 border-amber-500/30 bg-amber-500/10';
@@ -312,8 +314,21 @@ export function AdminDashboard({ session, onLogout, onSwitchToUserPortal }: Admi
   };
 
   return (
-    <div className="h-screen w-screen bg-slate-950 text-white flex overflow-hidden">
-      <aside className="w-72 border-r border-slate-800/70 bg-slate-900/70 p-4 flex flex-col">
+    <div className="relative isolate h-screen w-screen bg-slate-950 text-white flex overflow-hidden">
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: ADMIN_DASHBOARD_BG_IMAGE_STACK,
+          backgroundSize: 'cover, 40% auto, 32% auto',
+          backgroundPosition: 'center center, right top, left bottom',
+          backgroundRepeat: 'no-repeat, no-repeat, no-repeat',
+          opacity: 0.28,
+        }}
+      />
+      <div className="absolute inset-0 pointer-events-none bg-slate-950/58" />
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,_rgba(248,113,113,0.14),_transparent_45%),radial-gradient(circle_at_bottom_left,_rgba(56,189,248,0.12),_transparent_45%)]" />
+
+      <aside className="relative z-10 w-72 border-r border-slate-800/70 bg-slate-900/72 p-4 flex flex-col">
         <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3">
           <p className="text-[10px] font-mono uppercase tracking-wider text-red-300">Admin</p>
           <h1 className="text-lg font-semibold mt-1">SkyOps Control</h1>
@@ -356,7 +371,7 @@ export function AdminDashboard({ session, onLogout, onSwitchToUserPortal }: Admi
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto p-6">
+  <main className="relative z-10 flex-1 overflow-y-auto p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-[10px] text-slate-500 uppercase tracking-wider font-mono">Admin Dashboard</p>

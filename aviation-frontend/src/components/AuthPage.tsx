@@ -10,6 +10,7 @@ interface AuthPageProps {
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const AUTH_BG_IMAGE_STACK = "url('/image.jpeg'), url('/image%20(2).jpeg'), url('/image%20(3).jpeg')";
 
 export function AuthPage({ onAuthenticated }: AuthPageProps) {
   const [mode, setMode] = useState<AuthMode>('login');
@@ -68,8 +69,20 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-slate-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur p-6 shadow-2xl shadow-black/30">
+    <div className="relative min-h-screen w-screen bg-slate-950 flex items-center justify-center p-6 overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: AUTH_BG_IMAGE_STACK,
+          backgroundSize: 'cover, 38% auto, 42% auto',
+          backgroundPosition: 'center center, left bottom, right top',
+          backgroundRepeat: 'no-repeat, no-repeat, no-repeat',
+        }}
+      />
+      <div className="absolute inset-0 bg-slate-950/65" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.20),_transparent_45%),radial-gradient(circle_at_bottom,_rgba(16,185,129,0.18),_transparent_38%)]" />
+
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/72 backdrop-blur-md p-6 shadow-2xl shadow-black/30">
         <div className="flex items-center gap-3 mb-5">
           <div className="h-10 w-10 rounded-xl bg-aviation-blue/15 border border-aviation-blue/30 flex items-center justify-center">
             <ShieldCheck className="w-5 h-5 text-aviation-blue" />

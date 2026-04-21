@@ -9,6 +9,7 @@ interface AdminLoginPageProps {
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const ADMIN_AUTH_BG_IMAGE_STACK = "url('/image%20(3).jpeg'), url('/image%20(2).jpeg'), url('/image.jpeg')";
 
 export function AdminLoginPage({ onAuthenticated, onSwitchToUserLogin }: AdminLoginPageProps) {
   const [email, setEmail] = useState('admin.test@skyops.com');
@@ -48,8 +49,20 @@ export function AdminLoginPage({ onAuthenticated, onSwitchToUserLogin }: AdminLo
   };
 
   return (
-    <div className="min-h-screen w-screen bg-slate-950 flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl border border-red-900/50 bg-slate-900/70 backdrop-blur p-6 shadow-2xl shadow-black/30">
+    <div className="relative min-h-screen w-screen bg-slate-950 flex items-center justify-center p-6 overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: ADMIN_AUTH_BG_IMAGE_STACK,
+          backgroundSize: 'cover, 36% auto, 44% auto',
+          backgroundPosition: 'center center, left top, right bottom',
+          backgroundRepeat: 'no-repeat, no-repeat, no-repeat',
+        }}
+      />
+      <div className="absolute inset-0 bg-slate-950/68" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(248,113,113,0.24),_transparent_45%),radial-gradient(circle_at_bottom_left,_rgba(56,189,248,0.16),_transparent_45%)]" />
+
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-red-900/50 bg-slate-900/74 backdrop-blur-md p-6 shadow-2xl shadow-black/30">
         <div className="flex items-center gap-3 mb-5">
           <div className="h-10 w-10 rounded-xl bg-red-500/15 border border-red-400/30 flex items-center justify-center">
             <ShieldCheck className="w-5 h-5 text-red-300" />
