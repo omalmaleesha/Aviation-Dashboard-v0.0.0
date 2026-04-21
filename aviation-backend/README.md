@@ -139,6 +139,12 @@ Interactive docs at **http://localhost:8000/docs**.
 | `ENABLE_ADMIN_TEST_USER` | `true` | Seeds a development admin user at startup |
 | `ADMIN_TEST_EMAIL` | `admin.test@skyops.com` | Seeded development admin email |
 | `ADMIN_TEST_PASSWORD` | `Admin#2026!Secure` | Seeded development admin password |
+| `APP_ENV` | `dev` | Runtime environment (`dev`/`prod`) used for weather auth defaults |
+| `WINDY_EMBED_BASE_URL` | `https://embed.windy.com/embed2.html` | Windy embed base URL |
+| `WINDY_API_KEY` | *(empty)* | Optional Windy API key for future premium integration |
+| `WEATHER_WINDY_DEFAULT_ZOOM` | `6` | Default zoom level for `/api/weather/windy` |
+| `WEATHER_WINDY_REQUIRE_AUTH` | `false` in dev, `true` in prod | Require JWT token for Windy endpoint |
+| `WEATHER_WINDY_RATE_LIMIT_PER_MINUTE` | `60` | Per-IP request limit for Windy endpoint |
 
 ---
 
@@ -180,6 +186,7 @@ Interactive docs at **http://localhost:8000/docs**.
 | `POST` | `/api/comms/messages/{message_id}/ack` | Acknowledge a comms message (idempotent) |
 | `GET` | `/api/comms/messages` | Filtered/paginated comms message history |
 | `GET` | `/api/comms/channels` | Channel health/status list |
+| `GET` | `/api/weather/windy` | Generate Windy embed URL dynamically (supports `lat/lon` or `flightId`) |
 
 ### WebSocket
 
@@ -272,6 +279,20 @@ Admin dashboard data APIs (require admin bearer token):
 - `GET /api/admin/system/metrics`
 	- Returns:
 		- `items[]` with metric cards such as `latency` and `error-rate` (`id`, `label`, `value`, `unit`, `status`)
+
+### Windy Weather Embed (Frontend integration)
+
+- `GET /api/weather/windy`
+	- Query params:
+		- `lat` (optional when `flightId` provided)
+		- `lon` (optional when `flightId` provided)
+		- `zoom` (optional, default from `WEATHER_WINDY_DEFAULT_ZOOM`)
+		- `layer` (`wind`, `rain`, `clouds`, `pressure`)
+		- `flightId` (optional: resolves center from route history)
+	- Response:
+		- `embedUrl`
+		- `center` (present when `flightId` is used)
+		- `resolvedFrom` (`query` or `flightRoute`)
 
 Seeded development admin account (unless `ENABLE_ADMIN_TEST_USER=false`):
 
