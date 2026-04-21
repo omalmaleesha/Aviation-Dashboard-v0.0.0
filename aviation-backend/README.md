@@ -136,6 +136,15 @@ Interactive docs at **http://localhost:8000/docs**.
 | `ENABLE_TEST_USER` | `true` | Seeds a development test user at startup |
 | `TEST_USER_EMAIL` | `test.user@skyops.com` | Seeded development user email |
 | `TEST_USER_PASSWORD` | `TestUser#2026!Secure` | Seeded development user password |
+| `ENABLE_ADMIN_TEST_USER` | `true` | Seeds a development admin user at startup |
+| `ADMIN_TEST_EMAIL` | `admin.test@skyops.com` | Seeded development admin email |
+| `ADMIN_TEST_PASSWORD` | `Admin#2026!Secure` | Seeded development admin password |
+| `APP_ENV` | `dev` | Runtime environment (`dev`/`prod`) used for weather auth defaults |
+| `WINDY_EMBED_BASE_URL` | `https://embed.windy.com/embed2.html` | Windy embed base URL |
+| `WINDY_API_KEY` | *(empty)* | Optional Windy API key for future premium integration |
+| `WEATHER_WINDY_DEFAULT_ZOOM` | `6` | Default zoom level for `/api/weather/windy` |
+| `WEATHER_WINDY_REQUIRE_AUTH` | `false` in dev, `true` in prod | Require JWT token for Windy endpoint |
+| `WEATHER_WINDY_RATE_LIMIT_PER_MINUTE` | `60` | Per-IP request limit for Windy endpoint |
 
 ---
 
@@ -157,7 +166,17 @@ Interactive docs at **http://localhost:8000/docs**.
 | `GET` | `/api/analytics` | Paginated list of all flight analytics |
 | `POST` | `/api/auth/register` | Create a user and return a JWT access token |
 | `POST` | `/api/auth/login` | Authenticate with email/password and return JWT token |
+| `POST` | `/api/auth/admin/login` | Authenticate admin user for admin panel access |
 | `GET` | `/api/auth/me` | Return current authenticated user profile |
+| `GET` | `/api/auth/admin/me` | Return current authenticated admin profile |
+| `GET` | `/api/admin/overview` | Admin dashboard counters (users, sessions, incidents, alerts, health score) |
+| `GET` | `/api/admin/users?limit=&offset=` | Paginated admin users table data |
+| `PATCH` | `/api/admin/users/{user_id}/role` | Update user role from admin panel |
+| `PATCH` | `/api/admin/users/{user_id}/active` | Enable/disable user account |
+| `GET` | `/api/admin/incidents?status=open,investigating&limit=20` | Admin incidents list with optional status filter |
+| `POST` | `/api/admin/incidents/{incident_id}/resolve` | Resolve an incident |
+| `GET` | `/api/admin/audit-logs?limit=30&offset=0` | Paginated admin audit logs |
+| `GET` | `/api/admin/system/metrics` | Admin system health metrics payload |
 | `GET` | `/api/users/me` | Get editable profile details for logged-in user |
 | `PATCH` | `/api/users/me` | Update profile fields (`full_name`, `role`, `timezone`, `contact_number`) |
 | `GET` | `/api/settings/me` | Get app/system preference settings for logged-in user |
@@ -167,7 +186,9 @@ Interactive docs at **http://localhost:8000/docs**.
 | `POST` | `/api/comms/messages/{message_id}/ack` | Acknowledge a comms message (idempotent) |
 | `GET` | `/api/comms/messages` | Filtered/paginated comms message history |
 | `GET` | `/api/comms/channels` | Channel health/status list |
+| `GET` | `/api/weather/windy` | Generate Windy embed URL dynamically (supports `lat/lon` or `flightId`) |
 | `GET` | `/api/audit/timeline` | Incident timeline + audit log with filters/pagination |
+
 
 ### WebSocket
 
@@ -198,6 +219,87 @@ On startup, the backend creates a dev test account (unless `ENABLE_TEST_USER=fal
 - **Password:** `TestUser#2026!Secure`
 
 Use `/api/auth/login` to get a bearer token, then call `/api/auth/me` with `Authorization: Bearer <token>`.
+
+### Admin Login (Frontend update)
+
+Use these APIs for admin panel auth:
+
+- `POST /api/auth/admin/login`
+	- Body:
+		- `email`
+		- `password`
+	- Success response includes:
+		- `access_token`
+		- `token_type`
+		- `expires_in`
+		- `user` with `is_admin=true`, `role`
+
+- `GET /api/auth/admin/me`
+	- Header: `Authorization: Bearer <token>`
+	- Use this on app load/refresh to guard admin routes.
+
+Suggested frontend flow:
+
+1. Submit admin login form to `/api/auth/admin/login`.
+2. Save returned token (same storage strategy you use for user login).
+3. Route to admin panel only when `user.is_admin === true`.
+4. On app init, call `/api/auth/admin/me`; if 401/403, clear token and redirect to admin login.
+
+Admin dashboard data APIs (require admin bearer token):
+
+- `GET /api/admin/overview`
+	- Returns:
+		- `overview.total_users`
+		- `overview.active_sessions`
+		- `overview.open_incidents`
+		- `overview.unresolved_alerts`
+		- `overview.system_health_score`
+- `GET /api/admin/users?limit=50&offset=0`
+	- Returns paginated user records for table rendering:
+		- `items[]` with `id`, `email`, `role`, `is_admin`, `is_active`, `is_test_user`, `created_at`, `last_login_at`
+		- `total`, `limit`, `offset`
+- `PATCH /api/admin/users/{user_id}/role`
+	- Body:
+		- `role` (example: `OPERATOR`, `DISPATCHER`, `ADMIN`)
+	- Returns:
+		- `id`, `email`, `role`, `is_admin`, `is_active`
+- `PATCH /api/admin/users/{user_id}/active`
+	- Body:
+		- `is_active` (boolean)
+	- Returns:
+		- `id`, `email`, `is_active`
+- `GET /api/admin/incidents?status=open,investigating&limit=20`
+	- Returns:
+		- `items[]` with `id`, `title`, `severity`, `status`, `affected_system`, `created_at`, `owner`
+- `POST /api/admin/incidents/{incident_id}/resolve`
+	- Returns:
+		- `id`, `status`, `resolved_at`, `resolved_by`
+- `GET /api/admin/audit-logs?limit=30&offset=0`
+	- Returns:
+		- `items[]` with `id`, `actor_email`, `action`, `target`, `created_at`, `metadata`
+		- `total`
+- `GET /api/admin/system/metrics`
+	- Returns:
+		- `items[]` with metric cards such as `latency` and `error-rate` (`id`, `label`, `value`, `unit`, `status`)
+
+### Windy Weather Embed (Frontend integration)
+
+- `GET /api/weather/windy`
+	- Query params:
+		- `lat` (optional when `flightId` provided)
+		- `lon` (optional when `flightId` provided)
+		- `zoom` (optional, default from `WEATHER_WINDY_DEFAULT_ZOOM`)
+		- `layer` (`wind`, `rain`, `clouds`, `pressure`)
+		- `flightId` (optional: resolves center from route history)
+	- Response:
+		- `embedUrl`
+		- `center` (present when `flightId` is used)
+		- `resolvedFrom` (`query` or `flightRoute`)
+
+Seeded development admin account (unless `ENABLE_ADMIN_TEST_USER=false`):
+
+- **Email:** `admin.test@skyops.com`
+- **Password:** `Admin#2026!Secure`
 
 ---
 

@@ -35,13 +35,14 @@ from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
 from app.routes.settings import router as settings_router
 from app.routes.comms import router as comms_router
-from app.routes.audit import router as audit_router
+from app.routes.admin import router as admin_router
+from app.routes.weather import router as weather_router
 from app.services.opensky import start_polling, stop_polling
 from app.services.websocket import manager
 from app.services.alert_ws import alert_manager
 from app.services.fuel_analytics import start_fuel_analytics_loop, stop_fuel_analytics_loop
 from app.database import async_session, init_db
-from app.services.auth import seed_test_user
+from app.services.auth import seed_admin_test_user, seed_test_user
 
 # ─── Logging ─────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -62,6 +63,9 @@ async def lifespan(app: FastAPI):
         seeded_user = await seed_test_user(session)
         if seeded_user is not None:
             logger.info("🔐 Test user ready: %s", seeded_user.email)
+        seeded_admin = await seed_admin_test_user(session)
+        if seeded_admin is not None:
+            logger.info("🛡️ Admin test user ready: %s", seeded_admin.email)
     poller_task = asyncio.create_task(start_polling())
     broadcast_task = asyncio.create_task(manager.start_broadcast_loop())
     alert_task = asyncio.create_task(alert_manager.start_broadcast_loop())
@@ -128,7 +132,8 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(settings_router)
 app.include_router(comms_router)
-app.include_router(audit_router)
+app.include_router(admin_router)
+app.include_router(weather_router)
 
 
 @app.get("/", tags=["root"])

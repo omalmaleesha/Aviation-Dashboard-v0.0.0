@@ -13,10 +13,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.models.auth_schemas import LoginRequest, RegisterRequest, TokenResponse, UserPublic
 from app.services.auth import (
+    authenticate_admin_user,
     authenticate_user,
     create_access_token,
     decode_access_token,
     get_user_by_id,
+    is_admin_user,
+    mark_login_success,
     register_user,
 )
 
@@ -28,12 +31,19 @@ def _to_user_public(user) -> UserPublic:
     return UserPublic(
         id=user.id,
         email=user.email,
+        role=user.role,
+        is_admin=bool(user.is_admin),
         is_active=user.is_active,
         is_test_user=user.is_test_user,
         created_at=(
             user.created_at.replace(tzinfo=timezone.utc)
             if user.created_at and user.created_at.tzinfo is None
             else user.created_at
+        ),
+        last_login_at=(
+            user.last_login_at.replace(tzinfo=timezone.utc)
+            if user.last_login_at and user.last_login_at.tzinfo is None
+            else user.last_login_at
         ),
     )
 
@@ -62,6 +72,12 @@ async def get_current_user(
     return user
 
 
+async def get_current_admin_user(user=Depends(get_current_user)):
+    if not is_admin_user(user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+
 @router.post("/register", response_model=TokenResponse, status_code=201)
 async def register(
     body: RegisterRequest,
@@ -82,6 +98,22 @@ async def login(
     session: AsyncSession = Depends(get_session),
 ):
     user = await authenticate_user(session, body.email, body.password)
+    await mark_login_success(session, user)
+    token, expires_in = create_access_token(user_id=user.id, email=user.email)
+    return TokenResponse(
+        access_token=token,
+        expires_in=expires_in,
+        user=_to_user_public(user),
+    )
+
+
+@router.post("/admin/login", response_model=TokenResponse)
+async def admin_login(
+    body: LoginRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    user = await authenticate_admin_user(session, body.email, body.password)
+    await mark_login_success(session, user)
     token, expires_in = create_access_token(user_id=user.id, email=user.email)
     return TokenResponse(
         access_token=token,
@@ -92,4 +124,9 @@ async def login(
 
 @router.get("/me", response_model=UserPublic)
 async def me(user=Depends(get_current_user)):
+    return _to_user_public(user)
+
+
+@router.get("/admin/me", response_model=UserPublic)
+async def admin_me(user=Depends(get_current_admin_user)):
     return _to_user_public(user)

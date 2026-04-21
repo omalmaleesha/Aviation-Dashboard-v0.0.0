@@ -19,7 +19,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import (
+    ADMIN_TEST_EMAIL,
+    ADMIN_TEST_PASSWORD,
     AUTH_MIN_PASSWORD_LENGTH,
+    ENABLE_ADMIN_TEST_USER,
     ENABLE_TEST_USER,
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES,
     JWT_ALGORITHM,
@@ -36,6 +39,15 @@ _PASSWORD_LOWER_RE = re.compile(r"[a-z]")
 _PASSWORD_DIGIT_RE = re.compile(r"\d")
 _PASSWORD_SYMBOL_RE = re.compile(r"[^A-Za-z0-9]")
 _PBKDF2_ITERATIONS = 600_000
+_ADMIN_ROLES = {"ADMIN", "ADMINISTRATOR"}
+
+
+def _now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _normalize_email(email: str) -> str:
+    return email.strip().lower()
 
 
 def _unauthorized() -> HTTPException:
@@ -109,7 +121,7 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(*, user_id: int, email: str) -> tuple[str, int]:
-    now = datetime.now(timezone.utc)
+    now = _now_utc()
     expires_delta = timedelta(minutes=JWT_ACCESS_TOKEN_EXPIRE_MINUTES)
     exp = now + expires_delta
     payload = {
@@ -144,7 +156,7 @@ def decode_access_token(token: str) -> dict:
 
 
 async def get_user_by_email(session: AsyncSession, email: str) -> User | None:
-    result = await session.execute(select(User).where(User.email == email.lower()))
+    result = await session.execute(select(User).where(User.email == _normalize_email(email)))
     return result.scalar_one_or_none()
 
 
@@ -154,7 +166,7 @@ async def get_user_by_id(session: AsyncSession, user_id: int) -> User | None:
 
 
 async def register_user(session: AsyncSession, email: str, password: str, is_test_user: bool = False) -> User:
-    normalized_email = email.lower().strip()
+    normalized_email = _normalize_email(email)
     validate_password_strength(password)
 
     existing = await get_user_by_email(session, normalized_email)
@@ -164,6 +176,8 @@ async def register_user(session: AsyncSession, email: str, password: str, is_tes
     user = User(
         email=normalized_email,
         password_hash=hash_password(password),
+        role="Operations Controller",
+        is_admin=False,
         is_active=True,
         is_test_user=is_test_user,
     )
@@ -174,7 +188,7 @@ async def register_user(session: AsyncSession, email: str, password: str, is_tes
 
 
 async def authenticate_user(session: AsyncSession, email: str, password: str) -> User:
-    user = await get_user_by_email(session, email.lower().strip())
+    user = await get_user_by_email(session, email)
     if user is None:
         raise _unauthorized()
 
@@ -184,6 +198,23 @@ async def authenticate_user(session: AsyncSession, email: str, password: str) ->
     if not verify_password(password, user.password_hash):
         raise _unauthorized()
 
+    return user
+
+
+async def mark_login_success(session: AsyncSession, user: User) -> None:
+    user.last_login_at = _now_utc()
+    await session.commit()
+    await session.refresh(user)
+
+
+def is_admin_user(user: User) -> bool:
+    return bool(user.is_admin) or user.role.strip().upper() in _ADMIN_ROLES
+
+
+async def authenticate_admin_user(session: AsyncSession, email: str, password: str) -> User:
+    user = await authenticate_user(session, email, password)
+    if not is_admin_user(user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return user
 
 
@@ -201,3 +232,29 @@ async def seed_test_user(session: AsyncSession) -> User | None:
         password=TEST_USER_PASSWORD,
         is_test_user=True,
     )
+
+
+async def seed_admin_test_user(session: AsyncSession) -> User | None:
+    if not ENABLE_ADMIN_TEST_USER:
+        return None
+
+    existing = await get_user_by_email(session, ADMIN_TEST_EMAIL)
+    if existing is not None:
+        if not existing.is_admin or existing.role.strip().upper() not in _ADMIN_ROLES:
+            existing.is_admin = True
+            existing.role = "ADMIN"
+            await session.commit()
+            await session.refresh(existing)
+        return existing
+
+    user = await register_user(
+        session=session,
+        email=ADMIN_TEST_EMAIL,
+        password=ADMIN_TEST_PASSWORD,
+        is_test_user=True,
+    )
+    user.is_admin = True
+    user.role = "ADMIN"
+    await session.commit()
+    await session.refresh(user)
+    return user

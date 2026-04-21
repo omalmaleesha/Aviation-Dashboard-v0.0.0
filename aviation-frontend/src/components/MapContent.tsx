@@ -211,6 +211,7 @@ interface FlightMapProps {
   flights: Flight[];
   isHistorical?: boolean;
   focusFlightId?: string | null;
+  onSelectedFlightChange?: (flight: Flight | null) => void;
 }
 
 function formatAirportLabel(value?: string | null, fallback = 'Unknown airport'): string {
@@ -244,7 +245,12 @@ function FocusOnSelectedFlight({ selectedFlight }: { selectedFlight?: Flight }) 
   return null;
 }
 
-export function FlightMap({ flights, isHistorical = false, focusFlightId = null }: FlightMapProps) {
+export function FlightMap({
+  flights,
+  isHistorical = false,
+  focusFlightId = null,
+  onSelectedFlightChange,
+}: FlightMapProps) {
   const { selectedFlightId, route, isLoading, message, selectFlight, clearSelection } = useFlightRoute(2);
 
   // Memoize cluster options so the object reference stays stable across renders
@@ -278,6 +284,10 @@ export function FlightMap({ flights, isHistorical = false, focusFlightId = null 
   const selectedFlight = effectiveSelectedFlightId
     ? flights.find((f) => f.flightId.toLowerCase() === effectiveSelectedFlightId.toLowerCase())
     : undefined;
+
+  useEffect(() => {
+    onSelectedFlightChange?.(selectedFlight ?? null);
+  }, [onSelectedFlightChange, selectedFlight]);
 
   const originLabel = formatAirportLabel(route?.origin_icao, formatAirportLabel(selectedFlight?.origin, 'Unknown origin'));
   const destinationLabel = formatAirportLabel(route?.destination_icao, formatAirportLabel(selectedFlight?.destination, 'Unknown destination'));

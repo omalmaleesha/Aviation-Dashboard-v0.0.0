@@ -42,6 +42,10 @@ def _ensure_users_profile_columns(sync_conn) -> None:
         )
     if "contact_number" not in existing_columns:
         statements.append("ALTER TABLE users ADD COLUMN contact_number VARCHAR(25)")
+    if "is_admin" not in existing_columns:
+        statements.append("ALTER TABLE users ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0")
+    if "last_login_at" not in existing_columns:
+        statements.append("ALTER TABLE users ADD COLUMN last_login_at DATETIME")
 
     for stmt in statements:
         sync_conn.exec_driver_sql(stmt)
@@ -51,6 +55,7 @@ async def init_db() -> None:
     """Create all tables (idempotent — safe to call on every startup)."""
     # Ensure all ORM models are imported before metadata.create_all()
     # so SQLAlchemy knows every table definition.
+    from app.models import admin_orm as _admin_orm  # noqa: F401
     from app.models import auth_orm as _auth_orm  # noqa: F401
     from app.models import audit_orm as _audit_orm  # noqa: F401
     from app.models import comms_orm as _comms_orm  # noqa: F401

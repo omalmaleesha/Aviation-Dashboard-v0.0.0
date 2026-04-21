@@ -100,3 +100,17 @@ AUTH_MIN_PASSWORD_LENGTH = int(os.getenv("AUTH_MIN_PASSWORD_LENGTH", "12"))
 ENABLE_TEST_USER = os.getenv("ENABLE_TEST_USER", "true").lower() == "true"
 TEST_USER_EMAIL = os.getenv("TEST_USER_EMAIL", "test.user@skyops.com")
 TEST_USER_PASSWORD = os.getenv("TEST_USER_PASSWORD", "TestUser#2026!Secure")
+
+# Development admin seed user (set ENABLE_ADMIN_TEST_USER=false in production)
+ENABLE_ADMIN_TEST_USER = os.getenv("ENABLE_ADMIN_TEST_USER", "true").lower() == "true"
+ADMIN_TEST_EMAIL = os.getenv("ADMIN_TEST_EMAIL", "admin.test@skyops.com")
+ADMIN_TEST_PASSWORD = os.getenv("ADMIN_TEST_PASSWORD", "Admin#2026!Secure")
+
+# ─── Weather Integration (Windy) ───────────────────────────────────
+APP_ENV = os.getenv("APP_ENV", "dev").strip().lower()
+WINDY_EMBED_BASE_URL = os.getenv("WINDY_EMBED_BASE_URL", "https://embed.windy.com/embed2.html")
+WINDY_API_KEY = os.getenv("WINDY_API_KEY", "")
+WEATHER_WINDY_DEFAULT_ZOOM = int(os.getenv("WEATHER_WINDY_DEFAULT_ZOOM", "6"))
+_weather_auth_default = "true" if APP_ENV == "prod" else "false"
+WEATHER_WINDY_REQUIRE_AUTH = os.getenv("WEATHER_WINDY_REQUIRE_AUTH", _weather_auth_default).lower() == "true"
+WEATHER_WINDY_RATE_LIMIT_PER_MINUTE = int(os.getenv("WEATHER_WINDY_RATE_LIMIT_PER_MINUTE", "60"))
