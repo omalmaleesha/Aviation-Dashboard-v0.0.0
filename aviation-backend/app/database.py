@@ -52,6 +52,7 @@ async def init_db() -> None:
     # Ensure all ORM models are imported before metadata.create_all()
     # so SQLAlchemy knows every table definition.
     from app.models import auth_orm as _auth_orm  # noqa: F401
+    from app.models import audit_orm as _audit_orm  # noqa: F401
     from app.models import comms_orm as _comms_orm  # noqa: F401
     from app.models import settings_orm as _settings_orm  # noqa: F401
     from app.models import turnaround_orm as _turnaround_orm  # noqa: F401

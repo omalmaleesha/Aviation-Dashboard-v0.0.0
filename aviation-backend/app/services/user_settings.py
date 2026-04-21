@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.auth_orm import User
 from app.models.settings_orm import UserSettings
 from app.models.user_settings_schemas import UserProfileUpdateRequest, UserSettingsUpdateRequest
+from app.services.audit import add_audit_event
 
 
 def validation_error_to_http(exc: ValidationError) -> HTTPException:
@@ -40,8 +41,25 @@ async def update_user_profile(
         raise HTTPException(status_code=404, detail="User not found")
 
     updates = body.model_dump(exclude_unset=True)
+    before = {field: getattr(db_user, field) for field in updates.keys()}
     for field, value in updates.items():
         setattr(db_user, field, value)
+
+    if updates:
+        await add_audit_event(
+            session,
+            category="PROFILE",
+            action="PROFILE_UPDATED",
+            actor_user_id=user.id,
+            resource_type="user",
+            resource_id=str(user.id),
+            details={
+                "changes": [
+                    {"field": f, "old": before.get(f), "new": updates.get(f)}
+                    for f in updates.keys()
+                ]
+            },
+        )
 
     db_user.updated_at = datetime.now(timezone.utc)
     await session.commit()
@@ -74,8 +92,25 @@ async def update_user_settings(
 
     settings = await get_or_create_settings(session, user_id)
     updates = body.model_dump(exclude_unset=True)
+    before = {field: getattr(settings, field) for field in updates.keys()}
     for field, value in updates.items():
         setattr(settings, field, value)
+
+    if updates:
+        await add_audit_event(
+            session,
+            category="SETTINGS",
+            action="SETTINGS_UPDATED",
+            actor_user_id=user_id,
+            resource_type="user_settings",
+            resource_id=str(user_id),
+            details={
+                "changes": [
+                    {"field": f, "old": before.get(f), "new": updates.get(f)}
+                    for f in updates.keys()
+                ]
+            },
+        )
 
     settings.updated_at = datetime.now(timezone.utc)
     await session.commit()
@@ -85,6 +120,20 @@ async def update_user_settings(
 
 async def reset_user_settings(session: AsyncSession, user_id: int) -> UserSettings:
     settings = await get_or_create_settings(session, user_id)
+
+    before = {
+        "enable_critical_alert_sound": settings.enable_critical_alert_sound,
+        "enable_email_alerts": settings.enable_email_alerts,
+        "show_offline_warning": settings.show_offline_warning,
+        "highlight_high_risk_turnarounds": settings.highlight_high_risk_turnarounds,
+        "auto_refresh_seconds": settings.auto_refresh_seconds,
+        "default_landing_view": settings.default_landing_view,
+        "default_airport_icao": settings.default_airport_icao,
+        "preferred_units": settings.preferred_units,
+        "map_auto_focus_selected_flight": settings.map_auto_focus_selected_flight,
+        "default_replay_offset_seconds": settings.default_replay_offset_seconds,
+        "replay_autoplay_enabled": settings.replay_autoplay_enabled,
+    }
 
     settings.enable_critical_alert_sound = True
     settings.enable_email_alerts = False
@@ -98,6 +147,34 @@ async def reset_user_settings(session: AsyncSession, user_id: int) -> UserSettin
     settings.default_replay_offset_seconds = 0
     settings.replay_autoplay_enabled = False
     settings.updated_at = datetime.now(timezone.utc)
+
+    after = {
+        "enable_critical_alert_sound": settings.enable_critical_alert_sound,
+        "enable_email_alerts": settings.enable_email_alerts,
+        "show_offline_warning": settings.show_offline_warning,
+        "highlight_high_risk_turnarounds": settings.highlight_high_risk_turnarounds,
+        "auto_refresh_seconds": settings.auto_refresh_seconds,
+        "default_landing_view": settings.default_landing_view,
+        "default_airport_icao": settings.default_airport_icao,
+        "preferred_units": settings.preferred_units,
+        "map_auto_focus_selected_flight": settings.map_auto_focus_selected_flight,
+        "default_replay_offset_seconds": settings.default_replay_offset_seconds,
+        "replay_autoplay_enabled": settings.replay_autoplay_enabled,
+    }
+    await add_audit_event(
+        session,
+        category="SETTINGS",
+        action="SETTINGS_RESET",
+        actor_user_id=user_id,
+        resource_type="user_settings",
+        resource_id=str(user_id),
+        details={
+            "changes": [
+                {"field": f, "old": before.get(f), "new": after.get(f)}
+                for f in after.keys()
+            ]
+        },
+    )
 
     await session.commit()
     await session.refresh(settings)

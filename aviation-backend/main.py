@@ -35,6 +35,7 @@ from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
 from app.routes.settings import router as settings_router
 from app.routes.comms import router as comms_router
+from app.routes.audit import router as audit_router
 from app.services.opensky import start_polling, stop_polling
 from app.services.websocket import manager
 from app.services.alert_ws import alert_manager
@@ -127,6 +128,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(settings_router)
 app.include_router(comms_router)
+app.include_router(audit_router)
 
 
 @app.get("/", tags=["root"])
